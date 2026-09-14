@@ -1,9 +1,8 @@
 import './styles/main.scss';
+import { createHeader } from './components/header/header';
 
 function renderApp(root: HTMLElement): void {
-  const heading = document.createElement('h1');
-  heading.textContent = 'MiniGames';
-  root.append(heading);
+  root.append(createHeader());
 }
 
 function mountApp(): void {

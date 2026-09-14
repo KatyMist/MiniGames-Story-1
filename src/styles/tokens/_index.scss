@@ -49,6 +49,12 @@
     --button-padding-inline-#{$name}: #{$value};
   }
 
+  @each $name, $value in buttons.$button-padding-block {
+    --button-padding-block-#{$name}: #{$value};
+  }
+
+  --border-width-default: #{buttons.$border-width-default};
+
   --font-family-base: #{map.get(typography.$font-families, 'base')};
   --font-family-heading: #{map.get(typography.$font-families, 'heading')};
 }
