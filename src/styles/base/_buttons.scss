@@ -34,3 +34,9 @@
     filter: brightness(0.95);
   }
 }
+
+// Крупный размер (Figma: Miro Button / btn-large).
+.btn--lg {
+  padding: var(--button-padding-block-lg) var(--button-padding-inline-lg);
+  font-size: var(--font-size-md);
+}

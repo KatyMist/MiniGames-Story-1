@@ -1,0 +1,128 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.hero {
+  position: relative;
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  // Фоновая картинка (Figma: Hero Section -> Fill hero-bg, Scale: Crop,
+  // Opacity 20%).
+  &::before {
+    z-index: 0;
+    background-image: url('../../assets/images/hero-bg.png');
+    background-position: center;
+    background-size: cover;
+    opacity: 0.2;
+  }
+
+  // Цветной оверлей поверх картинки (Figma: заливка #1E1B3A, 65%).
+  &::after {
+    z-index: 0;
+    background-color: rgb(30 27 58 / 65%);
+  }
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  padding: utils.space('8') utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    padding: utils.space('9') utils.space('5');
+  }
+
+  @include utils.respond-up('desktop') {
+    padding: utils.space('14') utils.space('15');
+  }
+}
+
+.hero__card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: utils.space('2');
+  padding: utils.space('3');
+  // Толщина рамки, радиус и тень отличаются по брейкпоинтам -- сверено в
+  // Figma для Hero Text Box на каждом из трёх фреймов (mobile/tablet/desktop).
+  border: 2px solid utils.color('on-primary');
+  border-radius: utils.radius('card-md');
+  background-color: utils.color('bg');
+  box-shadow: utils.shadow('hard-sm');
+
+  @include utils.respond-up('tablet') {
+    width: 480px;
+    border-width: 2.5px;
+    border-radius: utils.radius('lg');
+    box-shadow: utils.shadow('hard-md');
+  }
+
+  @include utils.respond-up('desktop') {
+    width: 640px;
+    gap: utils.space('3');
+    padding: utils.space('6');
+    border-width: 3px;
+    border-radius: utils.radius('xl');
+    box-shadow: utils.shadow('hard');
+  }
+}
+
+.hero__title {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  // Размер на mobile/tablet оценён по доступной высоте карточки (Hug) --
+  // на момент вёрстки не удалось снять точное значение из Figma из-за
+  // нестабильного доступа к файлу (см. комментарий в hero.ts/PR).
+  font-size: var(--font-size-lg);
+  line-height: 1.2;
+  letter-spacing: normal;
+
+  @include utils.respond-up('tablet') {
+    font-size: var(--font-size-2xl);
+    line-height: 1.15;
+  }
+
+  @include utils.respond-up('desktop') {
+    // display-large из Figma -- сверено через hover-подсказку токена.
+    font-size: var(--font-size-4xl);
+    line-height: 1.1;
+  }
+}
+
+.hero__subtitle {
+  font-weight: var(--font-weight-medium);
+  color: utils.color('on-bg');
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  letter-spacing: normal;
+
+  @include utils.respond-up('tablet') {
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+  }
+
+  @include utils.respond-up('desktop') {
+    // body-large из Figma -- сверено через hover-подсказку токена.
+    font-size: var(--font-size-md);
+    line-height: 1.5;
+  }
+}
+
+.hero__actions {
+  display: flex;
+}
+
+.hero__cta {
+  // Figma: Browse Library имеет letter-spacing +50%, но это (как и у
+  // логотипа в шапке) не соответствует реальной ширине текстового блока --
+  // применяем normal, см. пояснение по логотипу в PR шапки.
+  letter-spacing: normal;
+}

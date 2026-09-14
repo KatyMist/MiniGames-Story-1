@@ -1,8 +1,9 @@
 import './styles/main.scss';
 import { createHeader } from './components/header/header';
+import { createHero } from './components/hero/hero';
 
 function renderApp(root: HTMLElement): void {
-  root.append(createHeader());
+  root.append(createHeader(), createHero());
 }
 
 function mountApp(): void {
