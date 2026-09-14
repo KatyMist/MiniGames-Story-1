@@ -1,0 +1,17 @@
+// Небольшие помощники поверх CSS-переменных токенов, чтобы не писать
+// var(--...) руками и не ошибиться в названии.
+@function space($name) {
+  @return var(--space-#{$name});
+}
+
+@function color($name) {
+  @return var(--color-#{$name});
+}
+
+@function radius($name) {
+  @return var(--radius-#{$name});
+}
+
+@function shadow($name) {
+  @return var(--shadow-#{$name});
+}

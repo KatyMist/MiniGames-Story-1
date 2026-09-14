@@ -1,0 +1,29 @@
+$font-families: (
+  'base': (
+    'Inter',
+    sans-serif,
+  ),
+  'heading': (
+    'Poppins',
+    sans-serif,
+  ),
+);
+
+$font-sizes: (
+  'xs': 12px,
+  'sm': 14px,
+  'base': 16px,
+  'md': 18px,
+  'lg': 20px,
+  'xl': 24px,
+  '2xl': 32px,
+  '3xl': 40px,
+  '4xl': 56px,
+);
+
+$font-weights: (
+  'regular': 400,
+  'medium': 500,
+  'semibold': 600,
+  'bold': 700,
+);
