@@ -13,24 +13,32 @@ interface GameCard {
 }
 
 // Игры и их порядок — как в макете Figma (Carousel Track, слева направо).
-// Рейтинг/лайки сверены в Figma только для "Vacation Cafe Simulator"
-// (Properties -> Text); для остальных карточек панель не позволила
-// раскрыть вложенные текстовые слои (см. PR) — значения ниже временные
-// и требуют подтверждения реальными цифрами.
+// Рейтинг/лайки для "Vacation Cafe Simulator", "Islanders: New Shores" и
+// "Winter Burrow" подтверждены (сверены напрямую). Для "Tailside: Cozy Cafe
+// Sim" и "Shelve the Potions!" реальные цифры пока не подтверждены —
+// значения ниже временные, ждут подтверждения.
 const GAMES: readonly GameCard[] = [
   { title: 'Tailside: Cozy Cafe Sim', imageUrl: tailsideCardUrl, rating: '4.6', likes: '12.4K' },
-  { title: 'Islanders: New Shores', imageUrl: islandersCardUrl, rating: '4.7', likes: '19.2K' },
+  { title: 'Islanders: New Shores', imageUrl: islandersCardUrl, rating: '4.9', likes: '54.2K' },
   { title: 'Vacation Cafe Simulator', imageUrl: vacationCardUrl, rating: '4.8', likes: '28.7K' },
-  { title: 'Winter Burrow', imageUrl: winterBurrowCardUrl, rating: '4.5', likes: '9.8K' },
+  { title: 'Winter Burrow', imageUrl: winterBurrowCardUrl, rating: '4.9', likes: '32.4K' },
   { title: 'Shelve the Potions!', imageUrl: shelvePotionsCardUrl, rating: '4.4', likes: '7.1K' },
 ];
 
 // Ширины карточек по "расстоянию" от активной (0 — активная), сверены в
 // Figma для каждого брейкпоинта (Carousel Track на home-mobile/-tablet/-desktop).
+// Сами пиксельные значения — точные цифры из макета Figma (кадры 1920/768/375).
+// Порог для 3-уровневой "десктопной" раскладки (816/288/120) намеренно ниже,
+// чем буквально 1920px: обычный развёрнутый на весь экран браузер (в т.ч. на
+// MacBook с масштабированием Retina) почти никогда не даёт window.innerWidth
+// ровно 1920 — при точном совпадении с 1920 карусель откатывалась на
+// планшетную раскладку (448/105) даже в полноэкранном десктопном окне.
+// 1440px — это уже безусловно "десктопная" ширина экрана, поэтому раскладку
+// включаем от неё, не трогая сами измеренные в Figma значения.
 const MOBILE_WIDTH_SCALE: readonly number[] = [218, 56];
 
 const WIDTH_SCALE_BY_BREAKPOINT: readonly { query: string; widths: readonly number[] }[] = [
-  { query: '(min-width: 1920px)', widths: [816, 288, 120] },
+  { query: '(min-width: 1440px)', widths: [816, 288, 120] },
   { query: '(min-width: 768px)', widths: [448, 105] },
 ];
 
@@ -162,6 +170,10 @@ export function createNewGames(): HTMLElement {
       }
 
       card.classList.toggle('new-games__card--active', distance === 0);
+      // Самая дальняя ("peek") карточка в Figma не показывает подпись —
+      // её Overlay в Hug-режиме шире самой карточки, поэтому текст на
+      // такой узкой карточке прячем совсем, а не обрезаем/переносим.
+      card.classList.toggle('new-games__card--peek', distance >= widthScale.length - 1);
     }
 
     prevButton.disabled = activeIndex === 0;
