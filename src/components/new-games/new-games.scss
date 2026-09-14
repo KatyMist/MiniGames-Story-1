@@ -1,0 +1,217 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.new-games {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('2');
+  padding: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    gap: utils.space('3');
+    padding-block: utils.space('3');
+    padding-inline: utils.space('5');
+  }
+
+  @include utils.respond-up('desktop') {
+    gap: utils.space('5');
+    padding-block: utils.space('5');
+    padding-inline: utils.space('15');
+  }
+}
+
+.new-games__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.new-games__title-group {
+  display: flex;
+  align-items: center;
+  gap: utils.space('1');
+}
+
+// Жёлтый акцент рядом с заголовком секции (Figma: Yellow Accent Bar).
+.new-games__accent {
+  flex-shrink: 0;
+  width: utils.space('1');
+  height: utils.space('4');
+  border: 1.5px solid utils.color('on-primary');
+  border-radius: utils.radius('sm');
+  background-color: utils.color('primary');
+}
+
+.new-games__title {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  color: utils.color('on-primary');
+}
+
+// Стрелки скрыты на мобильном (Figma: home-mobile -> New Games Section не
+// содержит Frame со стрелками, только Section Header + Carousel Track).
+.new-games__arrows {
+  display: none;
+  gap: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    display: flex;
+  }
+}
+
+.new-games__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('6');
+  height: utils.space('6');
+  padding: 0;
+  border: 2px solid utils.color('on-primary');
+  border-radius: utils.radius('pill');
+  background-color: utils.color('white');
+  transition: opacity 0.2s ease;
+
+  &--next {
+    background-color: utils.color('primary');
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.new-games__arrow-icon {
+  font-size: 24px;
+  color: utils.color('on-primary');
+}
+
+.new-games__track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: utils.space('1');
+  height: 206px;
+  margin: 0;
+  padding-inline: utils.space('05');
+  overflow: hidden;
+
+  @include utils.respond-up('tablet') {
+    height: 288px;
+    padding-inline: utils.space('1');
+  }
+
+  @include utils.respond-up('desktop') {
+    height: 388px;
+  }
+}
+
+.new-games__card {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  height: 200px;
+  border: 2.5px solid utils.color('on-primary');
+  border-radius: utils.radius('lg');
+  background-color: utils.color('white');
+  transition:
+    width 0.3s ease,
+    border-width 0.3s ease;
+
+  @include utils.respond-up('tablet') {
+    height: 280px;
+  }
+
+  @include utils.respond-up('desktop') {
+    height: 384px;
+    border-radius: utils.radius('xl');
+  }
+
+  &--collapsed {
+    border-width: 0;
+  }
+}
+
+.new-games__card-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// Градиент для читаемости текста поверх картинки (Figma: Overlay ->
+// Linear Gradient, стопы 0% / 40% / 85%).
+.new-games__overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('1');
+  padding: utils.space('2');
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0%) 0%,
+    rgb(0 0 0 / 40%) 40%,
+    rgb(0 0 0 / 85%) 85%
+  );
+}
+
+.new-games__card-title {
+  overflow: hidden;
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+  line-height: 1;
+  color: utils.color('white');
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.new-games__card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: utils.space('1');
+}
+
+.new-games__card-rating,
+.new-games__card-likes {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: utils.space('05');
+}
+
+.new-games__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  font-variation-settings: 'FILL' 1;
+
+  &--star {
+    color: utils.color('primary');
+  }
+
+  &--like {
+    color: utils.color('like');
+  }
+}
+
+.new-games__card-value {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  line-height: 1;
+  color: utils.color('white');
+}

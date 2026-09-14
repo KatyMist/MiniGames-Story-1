@@ -1,9 +1,10 @@
 import './styles/main.scss';
 import { createHeader } from './components/header/header';
 import { createHero } from './components/hero/hero';
+import { createNewGames } from './components/new-games/newGames';
 
 function renderApp(root: HTMLElement): void {
-  root.append(createHeader(), createHero());
+  root.append(createHeader(), createHero(), createNewGames());
 }
 
 function mountApp(): void {
