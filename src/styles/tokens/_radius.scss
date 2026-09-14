@@ -1,6 +1,13 @@
+// Радиусы из Figma (Guidebook -> Corner Tokens). Названия -- по масштабу
+// используемых компонентов, значения сверены через панель Properties.
 $radius: (
   'sm': 4px,
   'md': 8px,
+  'card-md': 12px,
+  // corner-medium (карточка Hero на мобильном)
   'lg': 16px,
+  // corner-large (карточка Hero на планшете)
+  'xl': 24px,
+  // corner-extra-large (карточка Hero на десктопе)
   'pill': 999px,
 );
