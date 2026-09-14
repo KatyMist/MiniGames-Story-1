@@ -216,7 +216,18 @@ export function createNewGames(): HTMLElement {
     render();
   });
 
-  window.addEventListener('resize', render);
+  // ResizeObserver реагирует и на изменение размера окна (ширина трека
+  // меняется вместе с ним), и на сам факт появления трека в layout'е:
+  // первый вызов колбэка приходит сразу после observe(), даже если размер
+  // "не менялся" — это как раз тот момент, когда track ещё нет в DOM во
+  // время самого первого render() ниже (main.ts вставляет секцию в DOM уже
+  // после того, как createNewGames() вернёт значение), из-за чего
+  // track.clientWidth на тот момент равен 0 и центрирование ленты по нему
+  // посчиталось бы неверно.
+  const resizeObserver = new ResizeObserver(() => {
+    render();
+  });
+  resizeObserver.observe(track);
 
   render();
 
