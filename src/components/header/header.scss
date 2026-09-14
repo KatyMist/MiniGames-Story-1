@@ -30,8 +30,12 @@
 .header__logo-icon {
   display: block;
   flex-shrink: 0;
+  box-sizing: border-box;
   width: utils.space('4');
   height: utils.space('4');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  background-color: utils.color('white');
 }
 
 .header__logo-text {
