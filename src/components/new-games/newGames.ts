@@ -37,6 +37,12 @@ const GAMES: readonly GameCard[] = [
 // включаем от неё, не трогая сами измеренные в Figma значения.
 const MOBILE_WIDTH_SCALE: readonly number[] = [218, 56];
 
+// Отступ между карточками — совпадает с gap: utils.space('1') на
+// .new-games__rail (src/styles/tokens/_spacing.scss: '1' = 8px). Нужен в JS
+// отдельно, чтобы считать сдвиг ленты (см. render()) по целевым ширинам, а
+// не через чтение layout из DOM.
+const RAIL_GAP_PX = 8;
+
 const WIDTH_SCALE_BY_BREAKPOINT: readonly { query: string; widths: readonly number[] }[] = [
   { query: '(min-width: 1440px)', widths: [816, 288, 120] },
   { query: '(min-width: 768px)', widths: [448, 105] },
@@ -145,11 +151,15 @@ export function createNewGames(): HTMLElement {
 
   headerRow.append(titleGroup, arrows);
 
-  const track = document.createElement('ul');
+  const track = document.createElement('div');
   track.className = 'new-games__track';
 
+  const rail = document.createElement('ul');
+  rail.className = 'new-games__rail';
+
   const cards = GAMES.map((game) => createCard(game));
-  track.append(...cards);
+  rail.append(...cards);
+  track.append(rail);
 
   section.append(headerRow, track);
 
@@ -157,24 +167,40 @@ export function createNewGames(): HTMLElement {
 
   function render(): void {
     const widthScale = getActiveWidthScale();
+    let cursor = 0;
+    let activeCenter = 0;
 
     for (const [index, card] of cards.entries()) {
       const distance = Math.abs(index - activeIndex);
+      const width = distance < widthScale.length ? (widthScale[distance] ?? 0) : 0;
 
-      if (distance < widthScale.length) {
-        card.style.width = `${widthScale[distance]}px`;
-        card.classList.remove('new-games__card--collapsed');
-      } else {
-        card.style.width = '0px';
-        card.classList.add('new-games__card--collapsed');
-      }
-
+      card.style.width = `${width}px`;
+      card.classList.toggle('new-games__card--collapsed', distance >= widthScale.length);
       card.classList.toggle('new-games__card--active', distance === 0);
       // Самая дальняя ("peek") карточка в Figma не показывает подпись —
       // её Overlay в Hug-режиме шире самой карточки, поэтому текст на
       // такой узкой карточке прячем совсем, а не обрезаем/переносим.
       card.classList.toggle('new-games__card--peek', distance >= widthScale.length - 1);
+
+      if (index > 0) {
+        cursor += RAIL_GAP_PX;
+      }
+
+      if (index === activeIndex) {
+        activeCenter = cursor + width / 2;
+      }
+
+      cursor += width;
     }
+
+    // Активная карточка всегда центрируется сдвигом всей ленты (rail), а не
+    // через justify-content на треке: у первой/последней игры нет соседа с
+    // одной из сторон, и без явного расчёта раскладка "уплывала" в сторону
+    // вместо плавного центрирования. Считаем по целевым ширинам (widthScale),
+    // а не через offsetLeft/offsetWidth: у карточек CSS-transition по width,
+    // и синхронное чтение layout сразу после его смены отдаёт ещё не
+    // анимированное (старое) значение — из-за этого центрирование сбивалось.
+    rail.style.transform = `translateX(${track.clientWidth / 2 - activeCenter}px)`;
 
     prevButton.disabled = activeIndex === 0;
     nextButton.disabled = activeIndex === GAMES.length - 1;

@@ -89,11 +89,11 @@
   color: utils.color('on-primary');
 }
 
+// Трек — неподвижное окно с обрезкой: только его ширина и padding задают
+// видимую область. Сам сдвиг для центрирования активной карточки — на
+// .new-games__rail внутри, иначе у первой/последней игры (нет соседа с
+// одной из сторон) раскладку "уводило" в сторону вместо плавного центрирования.
 .new-games__track {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: utils.space('1');
   height: 206px;
   margin: 0;
   padding-inline: utils.space('05');
@@ -107,6 +107,17 @@
   @include utils.respond-up('desktop') {
     height: 388px;
   }
+}
+
+.new-games__rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: utils.space('1');
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  transition: transform 0.3s ease;
 }
 
 // overflow оставлен видимым: подпись (Overlay) в Figma задана как Hug
