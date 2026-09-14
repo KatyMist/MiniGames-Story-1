@@ -181,26 +181,31 @@ $card-border-width: 2.5px;
   }
 }
 
-.new-games__card-image {
+// Обёртка, которая реально обрезает картинку (overflow: hidden) — жёсткая
+// гарантия, что фото никогда не вылезет за скруглённый угол рамки, в любой
+// момент анимации ширины карточки. Радиус меньше, чем у самой рамки, ровно
+// на её толщину ($card-border-width): картинка лежит ВНУТРИ рамки (inset: 0
+// от border-box), и для визуально концентричных (совпадающих) скруглений
+// внутренний радиус обязан быть меньше внешнего на толщину рамки — иначе на
+// каждом углу остаётся заметный "срез"/шов.
+.new-games__image-clip {
   position: absolute;
   inset: 0;
   z-index: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  // border-radius: inherit давал ТАКОЙ ЖЕ радиус, как у самой карточки,
-  // хотя картинка лежит ВНУТРИ рамки (inset: 0 от border-box, то есть
-  // отступ на $card-border-width со всех сторон). Из-за этого скругления
-  // картинки и рамки были не концентричны — на каждом углу оставался
-  // заметный "срез"/шов. Радиус вложенного слоя должен быть меньше
-  // радиуса рамки ровно на её толщину.
+  overflow: hidden;
   border-radius: calc(#{utils.radius('lg')} - #{$card-border-width});
-  object-fit: cover;
 
   // 1440px — см. комментарий у .new-games__track выше.
   @media (min-width: 1440px) {
     border-radius: calc(#{utils.radius('xl')} - #{$card-border-width});
   }
+}
+
+.new-games__card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 // Градиент для читаемости текста поверх картинки (Figma: Overlay ->

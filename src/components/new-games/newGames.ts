@@ -70,11 +70,19 @@ function createCard(game: GameCard): HTMLLIElement {
   const card = document.createElement('li');
   card.className = 'new-games__card';
 
+  // Отдельная обёртка с overflow: hidden — картинка обрезается по своим
+  // границам гарантированно, а не полагается на border-radius у самого
+  // <img> (тот способ зависит от рендерера и не даёт железной гарантии,
+  // что фото не вылезет за скруглённый угол рамки при анимации ширины).
+  const imageClip = document.createElement('div');
+  imageClip.className = 'new-games__image-clip';
+
   const image = document.createElement('img');
   image.className = 'new-games__card-image';
   image.src = game.imageUrl;
   image.alt = game.title;
   image.loading = 'lazy';
+  imageClip.append(image);
 
   const overlay = document.createElement('div');
   overlay.className = 'new-games__overlay';
@@ -102,7 +110,7 @@ function createCard(game: GameCard): HTMLLIElement {
 
   meta.append(rating, likes);
   overlay.append(title, meta);
-  card.append(image, overlay);
+  card.append(imageClip, overlay);
 
   return card;
 }
