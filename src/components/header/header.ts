@@ -21,6 +21,13 @@ function createLogo(): HTMLAnchorElement {
   const icon = document.createElement('span');
   icon.className = 'header__logo-icon';
   icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = `
+    <svg viewBox="0 0 24 24" width="20" height="20" focusable="false">
+      <circle cx="12" cy="5" r="3.5" fill="var(--color-logo-accent)" />
+      <rect x="5" y="5" width="14" height="14" rx="2" fill="var(--color-logo-accent)" />
+      <circle cx="9" cy="19" r="3.5" fill="var(--color-white)" />
+    </svg>
+  `;
 
   const text = document.createElement('span');
   text.className = 'header__logo-text';

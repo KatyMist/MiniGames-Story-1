@@ -28,11 +28,15 @@
 }
 
 .header__logo-icon {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   width: utils.space('4');
   height: utils.space('4');
+  border: var(--border-width-default) solid utils.color('on-primary');
   border-radius: utils.radius('md');
-  background-color: utils.color('primary');
+  background-color: utils.color('white');
 }
 
 .header__logo-text {
