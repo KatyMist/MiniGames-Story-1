@@ -1,4 +1,5 @@
 import './header.scss';
+import logoIconUrl from '../../assets/icons/logo.png';
 
 interface NavLink {
   label: string;
@@ -18,16 +19,12 @@ function createLogo(): HTMLAnchorElement {
   logo.href = '/';
   logo.setAttribute('aria-label', 'MiniGames — на главную');
 
-  const icon = document.createElement('span');
+  const icon = document.createElement('img');
   icon.className = 'header__logo-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.innerHTML = `
-    <svg viewBox="0 0 24 24" width="20" height="20" focusable="false">
-      <circle cx="12" cy="5" r="3.5" fill="var(--color-logo-accent)" />
-      <rect x="5" y="5" width="14" height="14" rx="2" fill="var(--color-logo-accent)" />
-      <circle cx="9" cy="19" r="3.5" fill="var(--color-white)" />
-    </svg>
-  `;
+  icon.src = logoIconUrl;
+  icon.alt = '';
+  icon.width = 32;
+  icon.height = 32;
 
   const text = document.createElement('span');
   text.className = 'header__logo-text';
