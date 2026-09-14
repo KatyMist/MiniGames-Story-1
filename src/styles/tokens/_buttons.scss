@@ -9,3 +9,13 @@ $button-padding-inline: (
   'md': 20px,
   'lg': 28px,
 );
+
+// Вертикальный паддинг кнопок (сверен с Figma: кнопки в шапке -- 10px).
+$button-padding-block: (
+  'sm': 6px,
+  'md': 10px,
+  'lg': 14px,
+);
+
+// Толщина обводки кнопок/шапки в макете -- везде 2px.
+$border-width-default: 2px;
