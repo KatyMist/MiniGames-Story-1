@@ -1,0 +1,36 @@
+@use '../tokens';
+@use '../utils';
+
+// Общие классы кнопок (используются в шапке, диалоге авторизации и т.д.)
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  padding: var(--button-padding-block-md) var(--button-padding-inline-md);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.btn--outline {
+  background-color: transparent;
+
+  &:hover,
+  &:focus-visible {
+    background-color: utils.color('bg');
+  }
+}
+
+.btn--primary {
+  background-color: utils.color('primary');
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(0.95);
+  }
+}

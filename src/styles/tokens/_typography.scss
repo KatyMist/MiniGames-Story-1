@@ -1,14 +1,18 @@
+// В макете используется только Inter (в т.ч. для заголовков) —
+// проверено в Figma (панель Properties, Typography -> Font).
 $font-families: (
   'base': (
     'Inter',
     sans-serif,
   ),
   'heading': (
-    'Poppins',
+    'Inter',
     sans-serif,
   ),
 );
 
+// 'base' (16px) и 'xl' (24px) сверены с токенами Figma
+// (title-xx-small и headline-medium соответственно).
 $font-sizes: (
   'xs': 12px,
   'sm': 14px,
