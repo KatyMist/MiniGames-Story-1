@@ -118,7 +118,12 @@
 .new-games__rail {
   position: relative;
   display: flex;
-  align-items: center;
+  // flex-start, а не center: у карточки появилась жёсткая тень со
+  // смещением вниз (box-shadow: 4px 4px ...), трек чуть выше карточки
+  // именно на этот запас (см. .new-games__track), и весь этот запас
+  // должен остаться СНИЗУ, а не разделиться поровну сверху/снизу —
+  // иначе тень частично обрезается overflow: hidden у трека.
+  align-items: flex-start;
   gap: utils.space('1');
   width: max-content;
   margin: 0;
@@ -143,9 +148,15 @@ $card-border-width: 2.5px;
   border: $card-border-width solid utils.color('on-primary');
   border-radius: utils.radius('lg');
   background-color: utils.color('white');
+  // Жёсткая тень без блюра (Figma: Shadows and blurs -> Drop shadow,
+  // X: 4, Y: 4, Blur: 0, Spread: 0, цвет on-primary) — тот же цвет,
+  // что и у рамки, поэтому тень читается как плотный сплошной контур
+  // со смещением вправо-вниз, а не мягкое размытие.
+  box-shadow: 4px 4px 0 0 utils.color('on-primary');
   transition:
     width 0.3s ease,
-    border-width 0.3s ease;
+    border-width 0.3s ease,
+    box-shadow 0.3s ease;
 
   @include utils.respond-up('tablet') {
     height: 280px;
@@ -159,6 +170,7 @@ $card-border-width: 2.5px;
 
   &--collapsed {
     border-width: 0;
+    box-shadow: none;
   }
 
   // Крайняя ("peek") карточка показывает только картинку без подписи —
@@ -221,6 +233,7 @@ $card-border-width: 2.5px;
   font-size: var(--font-size-md);
   line-height: 1;
   color: utils.color('white');
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
   white-space: nowrap;
 }
 
@@ -264,4 +277,5 @@ $card-border-width: 2.5px;
   font-size: var(--font-size-base);
   line-height: 1;
   color: utils.color('white');
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
 }
