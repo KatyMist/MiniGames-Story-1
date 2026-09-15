@@ -4,21 +4,29 @@
 .game-developer {
   display: flex;
   flex-direction: column;
-  gap: utils.space('3');
+  gap: utils.space('2');
   padding: utils.space('2');
+  // По Dev Mode Figma (мобилки/планшет): у секции снизу тонкая линия-разделитель
+  // (border-bottom-width: 1px) — на десктопе в спеках её нет.
+  border-bottom: 1px solid utils.color('on-primary');
 
+  // На планшете картинка и карточка по-прежнему стоят одна под другой (как
+  // на мобилках) — это подтверждено в Dev Mode: у планшетного фрейма один
+  // общий размер (375 -> 768, 566 -> 628), а не раскладка в два столбца.
+  // В два столбца (flex-direction: row) секция переходит только на десктопе.
   @include utils.respond-up('tablet') {
-    flex-direction: row;
-    align-items: stretch;
-    gap: utils.space('5');
+    gap: utils.space('3');
     padding-block: utils.space('3');
     padding-inline: utils.space('5');
   }
 
   @include utils.respond-up('desktop') {
+    flex-direction: row;
+    align-items: stretch;
     gap: utils.space('5');
     padding-block: utils.space('5');
     padding-inline: utils.space('15');
+    border-bottom: none;
   }
 }
 
@@ -32,12 +40,15 @@
   object-fit: cover;
 
   @include utils.respond-up('tablet') {
-    width: 42%;
-    height: auto;
     border-radius: utils.radius('lg');
   }
 
+  // Раскладка в два столбца (картинка слева, карточка справа) появляется
+  // только на десктопе — на планшете картинка всё ещё во всю ширину, одна
+  // над карточкой (см. комментарий у .game-developer выше).
   @include utils.respond-up('desktop') {
+    width: 42%;
+    height: auto;
     border-radius: utils.radius('xl');
   }
 }
@@ -80,6 +91,7 @@
 }
 
 .game-developer__text {
+  margin: 0;
   max-width: 32em;
   font-size: var(--font-size-sm);
   line-height: 1.5;
@@ -90,9 +102,8 @@
   }
 }
 
-.game-developer__cta {
-  margin-top: utils.space('1');
-}
+// Отступ сверху уже даёт gap на .game-developer__card — свой margin-top
+// у кнопки был бы задвоением того же отступа.
 
 .game-developer__cta-icon {
   margin-right: utils.space('1');
@@ -100,6 +111,7 @@
 }
 
 .game-developer__contact {
+  margin: 0;
   font-size: var(--font-size-xs);
   color: utils.color('on-bg');
 }
