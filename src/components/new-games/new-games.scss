@@ -209,10 +209,13 @@ $card-border-width: 2.5px;
 }
 
 // Градиент для читаемости текста поверх картинки (Figma: Overlay ->
-// Linear Gradient, стопы 0% / 40% / 85%). Ширина — не 100%, а "не уже
-// карточки, но не уже контента": min-width держит фон во всю карточку,
-// а если заголовок/цифры не помещаются (узкие peek/secondary карточки),
-// блок расширяется по контенту, как Hug-слой в Figma.
+// Linear Gradient, стопы 0% / 40% / 85%). Ширина строго 100% карточки и
+// overflow: hidden — оверлей никогда не должен быть шире самой карточки
+// (раньше был min-width: 100% без верхней границы, и на узких карточках,
+// когда заголовок не помещался, весь блок "Hug"-ем расширялся ЗА рамку
+// карточки — визуально текст/фон вываливался наружу). Если заголовку не
+// хватает места — он обрезается многоточием (см. .new-games__card-title),
+// а не раздвигает оверлей.
 .new-games__overlay {
   position: absolute;
   z-index: 2;
@@ -221,7 +224,8 @@ $card-border-width: 2.5px;
   display: flex;
   flex-direction: column;
   gap: utils.space('1');
-  min-width: 100%;
+  width: 100%;
+  overflow: hidden;
   padding: utils.space('2');
   background: linear-gradient(
     to bottom,
@@ -233,12 +237,14 @@ $card-border-width: 2.5px;
 
 .new-games__card-title {
   margin: 0;
+  overflow: hidden;
   font-family: var(--font-family-heading);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-md);
   line-height: 1;
   color: utils.color('white');
   text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

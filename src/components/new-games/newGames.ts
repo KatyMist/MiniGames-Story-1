@@ -4,10 +4,26 @@ import islandersCardUrl from '../../assets/images/islanders-new-shores-card.jpg'
 import vacationCardUrl from '../../assets/images/vacation-cafe-simulator-card.jpg';
 import winterBurrowCardUrl from '../../assets/images/winter-burrow-card.jpg';
 import shelvePotionsCardUrl from '../../assets/images/shelve-the-potions-card.jpg';
+import tailsideCardPeekUrl from '../../assets/images/tailside-cozy-cafe-sim-card-peek.jpg';
+import islandersCardPeekUrl from '../../assets/images/islanders-new-shores-card-peek.jpg';
+import vacationCardPeekUrl from '../../assets/images/vacation-cafe-simulator-card-peek.jpg';
+import winterBurrowCardPeekUrl from '../../assets/images/winter-burrow-card-peek.jpg';
+import shelvePotionsCardPeekUrl from '../../assets/images/shelve-the-potions-card-peek.jpg';
 
 interface GameCard {
   title: string;
   imageUrl: string;
+  // Отдельная, заранее обрезанная по центру версия фото для самой узкой
+  // ("peek") карточки. Причина не чисто эстетическая: у object-fit: cover
+  // при таком соотношении сторон контейнера (узкая и высокая карточка)
+  // и почти квадратного/широкого исходника браузер должен растянуть
+  // картинку в ~7 раз по ширине, чтобы покрыть высоту — на таком
+  // экстремальном масштабе Chromium иногда не дорезает скруглённый угол
+  // до конца, и виден квадратный "хвостик" фото поверх рамки. Отдельная
+  // картинка с тем же центральным кадром, но заранее обрезанная почти
+  // до нужных пропорций, не требует такого масштабирования "на лету" —
+  // тот же самый кроп, но без экстремального scale и без бага рендера.
+  peekImageUrl: string;
   rating: string;
   likes: string;
 }
@@ -18,11 +34,41 @@ interface GameCard {
 // Sim" и "Shelve the Potions!" реальные цифры пока не подтверждены —
 // значения ниже временные, ждут подтверждения.
 const GAMES: readonly GameCard[] = [
-  { title: 'Tailside: Cozy Cafe Sim', imageUrl: tailsideCardUrl, rating: '4.6', likes: '12.4K' },
-  { title: 'Islanders: New Shores', imageUrl: islandersCardUrl, rating: '4.9', likes: '54.2K' },
-  { title: 'Vacation Cafe Simulator', imageUrl: vacationCardUrl, rating: '4.8', likes: '28.7K' },
-  { title: 'Winter Burrow', imageUrl: winterBurrowCardUrl, rating: '4.9', likes: '32.4K' },
-  { title: 'Shelve the Potions!', imageUrl: shelvePotionsCardUrl, rating: '4.4', likes: '7.1K' },
+  {
+    title: 'Tailside: Cozy Cafe Sim',
+    imageUrl: tailsideCardUrl,
+    peekImageUrl: tailsideCardPeekUrl,
+    rating: '4.6',
+    likes: '12.4K',
+  },
+  {
+    title: 'Islanders: New Shores',
+    imageUrl: islandersCardUrl,
+    peekImageUrl: islandersCardPeekUrl,
+    rating: '4.9',
+    likes: '54.2K',
+  },
+  {
+    title: 'Vacation Cafe Simulator',
+    imageUrl: vacationCardUrl,
+    peekImageUrl: vacationCardPeekUrl,
+    rating: '4.8',
+    likes: '28.7K',
+  },
+  {
+    title: 'Winter Burrow',
+    imageUrl: winterBurrowCardUrl,
+    peekImageUrl: winterBurrowCardPeekUrl,
+    rating: '4.9',
+    likes: '32.4K',
+  },
+  {
+    title: 'Shelve the Potions!',
+    imageUrl: shelvePotionsCardUrl,
+    peekImageUrl: shelvePotionsCardPeekUrl,
+    rating: '4.4',
+    likes: '7.1K',
+  },
 ];
 
 // Ширины карточек по "расстоянию" от активной (0 — активная), сверены в
@@ -82,6 +128,10 @@ function createCard(game: GameCard): HTMLLIElement {
   image.src = game.imageUrl;
   image.alt = game.title;
   image.loading = 'lazy';
+  // Полный и peek-варианты URL держим на самом элементе — render() ниже
+  // переключает src при входе/выходе карточки из состояния "peek".
+  image.dataset.fullSrc = game.imageUrl;
+  image.dataset.peekSrc = game.peekImageUrl;
   imageClip.append(image);
 
   const overlay = document.createElement('div');
@@ -188,7 +238,20 @@ export function createNewGames(): HTMLElement {
       // Самая дальняя ("peek") карточка в Figma не показывает подпись —
       // её Overlay в Hug-режиме шире самой карточки, поэтому текст на
       // такой узкой карточке прячем совсем, а не обрезаем/переносим.
-      card.classList.toggle('new-games__card--peek', distance >= widthScale.length - 1);
+      const isPeek = distance >= widthScale.length - 1;
+      card.classList.toggle('new-games__card--peek', isPeek);
+
+      // На "peek"-ширине показываем заранее обрезанную картинку (см.
+      // комментарий у peekImageUrl в GameCard) — избегаем экстремального
+      // object-fit: cover масштабирования, из-за которого угол фото не
+      // дорезался по скруглению рамки.
+      const image = card.querySelector<HTMLImageElement>('.new-games__card-image');
+      if (image) {
+        const nextSrc = isPeek ? image.dataset.peekSrc : image.dataset.fullSrc;
+        if (nextSrc && image.getAttribute('src') !== nextSrc) {
+          image.src = nextSrc;
+        }
+      }
 
       if (index > 0) {
         cursor += RAIL_GAP_PX;
