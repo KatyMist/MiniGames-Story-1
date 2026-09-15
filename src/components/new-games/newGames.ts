@@ -221,7 +221,10 @@ export function createNewGames(): HTMLElement {
 
   section.append(headerRow, track);
 
-  let activeIndex = Math.floor(GAMES.length / 2);
+  // По умолчанию активна первая игра — так показано в макете (карточка
+  // стоит вплотную к левому отступу секции, без "призрачного" пикового
+  // соседа слева, которого физически не существует).
+  let activeIndex = 0;
 
   function render(): void {
     const widthScale = getActiveWidthScale();
@@ -300,14 +303,23 @@ export function createNewGames(): HTMLElement {
       cursor += width;
     }
 
-    // Активная карточка всегда центрируется сдвигом всей ленты (rail), а не
-    // через justify-content на треке: у первой/последней игры нет соседа с
-    // одной из сторон, и без явного расчёта раскладка "уплывала" в сторону
-    // вместо плавного центрирования. Считаем по целевым ширинам (widthScale),
-    // а не через offsetLeft/offsetWidth: у карточек CSS-transition по width,
-    // и синхронное чтение layout сразу после его смены отдаёт ещё не
+    // Активная карточка центрируется сдвигом всей ленты (rail), а не через
+    // justify-content на треке. Считаем по целевым ширинам (widthScale), а
+    // не через offsetLeft/offsetWidth: у карточек CSS-transition по width, и
+    // синхронное чтение layout сразу после его смены отдаёт ещё не
     // анимированное (старое) значение — из-за этого центрирование сбивалось.
-    rail.style.transform = `translateX(${track.clientWidth / 2 - activeCenter}px)`;
+    const railTotalWidth = cursor;
+    const centeredTranslateX = track.clientWidth / 2 - activeCenter;
+    // У первой и последней игры нет соседа с одной из сторон, и "честное"
+    // центрирование тянуло бы ленту так, что перед первой (или после
+    // последней) карточкой появлялось пустое поле — которого нет ни у одного
+    // реального пикового соседа. В макете первая/последняя карточка стоит
+    // вплотную к отступу секции (как таблица Top Players ниже), поэтому
+    // ограничиваем сдвиг: лента не может обнажить пустоту ни слева от первой
+    // карточки, ни справа от последней.
+    const minTranslateX = Math.min(track.clientWidth - railTotalWidth, 0);
+    const translateX = Math.max(minTranslateX, Math.min(0, centeredTranslateX));
+    rail.style.transform = `translateX(${translateX}px)`;
 
     prevButton.disabled = activeIndex === 0;
     nextButton.disabled = activeIndex === GAMES.length - 1;
