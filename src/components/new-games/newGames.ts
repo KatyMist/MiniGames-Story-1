@@ -225,12 +225,48 @@ export function createNewGames(): HTMLElement {
 
   function render(): void {
     const widthScale = getActiveWidthScale();
+
+    // Значения в widthScale точны только при буквальной ширине эталонного кадра
+    // Figma (1920 / 768 / 375 — см. комментарий у WIDTH_SCALE_BY_BREAKPOINT выше).
+    // Внутри одного брейкпоинта реальное окно почти никогда не совпадает с этой
+    // шириной точь-в-точь (например, 1338px — уже "планшетный" брейкпоинт, но
+    // заметно шире буквальных 768px), и без масштабирования карточки оставались
+    // фиксированного эталонного размера — вокруг ленты появлялись огромные
+    // пустые поля по краям. Считаем, сколько карточек видно и какой суммарной
+    // ширине по Figma они соответствуют, и растягиваем/сжимаем все видимые
+    // карточки на один и тот же коэффициент, чтобы лента (карточки + фиксированные
+    // отступы между ними) всегда точно заполняла ширину трека — сохраняя те же
+    // самые пропорции, что и в макете.
+    let visibleCount = 0;
+    let referenceCardWidth = 0;
+
+    for (const [index] of cards.entries()) {
+      const distance = Math.abs(index - activeIndex);
+      if (distance < widthScale.length) {
+        visibleCount += 1;
+        referenceCardWidth += widthScale[distance] ?? 0;
+      }
+    }
+
+    const referenceGapWidth = Math.max(visibleCount - 1, 0) * RAIL_GAP_PX;
+    // track.clientWidth ещё 0 при самом первом синхронном render() ниже —
+    // секция в этот момент существует только в памяти и не вставлена в DOM
+    // (main.ts вставляет её уже после того, как createNewGames() вернёт
+    // значение). Без этой проверки availableCardWidth уходил в минус, а
+    // scale — в отрицательное число, из-за чего браузер отклонял такое
+    // значение width как невалидное CSS и карточки на миг оставались без
+    // ширины вовсе. Настоящий размер придёт следующим же вызовом render()
+    // из ResizeObserver сразу после монтирования.
+    const availableCardWidth = Math.max(track.clientWidth - referenceGapWidth, 0);
+    const scale =
+      referenceCardWidth > 0 && track.clientWidth > 0 ? availableCardWidth / referenceCardWidth : 1;
+
     let cursor = 0;
     let activeCenter = 0;
 
     for (const [index, card] of cards.entries()) {
       const distance = Math.abs(index - activeIndex);
-      const width = distance < widthScale.length ? (widthScale[distance] ?? 0) : 0;
+      const width = distance < widthScale.length ? (widthScale[distance] ?? 0) * scale : 0;
 
       card.style.width = `${width}px`;
       card.classList.toggle('new-games__card--collapsed', distance >= widthScale.length);
