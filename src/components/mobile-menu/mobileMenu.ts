@@ -171,11 +171,12 @@ export function createMobileMenu(
     if (event.key === 'Escape') close();
   });
 
-  // Бургер скрывается от tablet и выше (см. header.scss); если меню
-  // открыли на мобильном и повернули экран/расширили окно до планшета,
-  // закрываем его, иначе оно останется открытым без доступной кнопки-триггера.
-  const tabletQuery = window.matchMedia('(min-width: 768px)');
-  tabletQuery.addEventListener('change', (event) => {
+  // Бургер (и само меню) работают на mobile и на tablet, скрываются только
+  // от laptop (1440px) -- см. header.scss/mobile-menu.scss. Если меню
+  // открыли и расширили окно до laptop, закрываем его, иначе оно останется
+  // открытым без доступной кнопки-триггера.
+  const laptopQuery = window.matchMedia('(min-width: 1440px)');
+  laptopQuery.addEventListener('change', (event) => {
     if (event.matches) close();
   });
 
