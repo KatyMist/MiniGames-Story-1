@@ -13,7 +13,7 @@ function createUploadIcon(): HTMLSpanElement {
 export function createGameDeveloper(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'game-developer';
-  section.setAttribute('aria-label', 'Приглашение для разработчиков игр');
+  section.setAttribute('aria-label', 'Game developer invitation');
 
   const image = document.createElement('img');
   image.className = 'game-developer__image';
