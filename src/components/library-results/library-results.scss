@@ -66,6 +66,11 @@
   border: 2.5px solid utils.color('on-primary');
   border-radius: utils.radius('lg');
   background: utils.color('white');
+  // "Жёсткая" тень без блюра, тот же приём и то же значение (4px 4px 0 0
+  // on-primary), что и у карточек New Games с такой же 2.5px рамкой
+  // (см. $card-border-width в new-games.scss) -- фирменный стиль карточек
+  // в проекте, а не новое придуманное значение.
+  box-shadow: utils.shadow('hard-sm');
 
   @include utils.respond-up('tablet') {
     flex-direction: row;
