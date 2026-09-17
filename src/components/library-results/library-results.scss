@@ -114,6 +114,11 @@
     'button button';
   gap: utils.space('1');
   min-width: 0;
+  // min-height: 0 -- на всякий случай (см. подробный комментарий у
+  // .library-results__description про баг с переполнением): .content --
+  // тоже flex-элемент внутри .library-results__card, и без этого может
+  // унаследовать ту же проблему с автоматической минимальной высотой.
+  min-height: 0;
   padding: utils.space('2');
 
   @include utils.respond-up('tablet') {
@@ -229,6 +234,17 @@
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
+  // БАГ (текст "уходил в никуда" за пределы карточки): .description --
+  // грид-элемент, а у грид/флекс-элементов по умолчанию min-height: auto,
+  // из-за чего браузер иногда считает "нужную" высоту по НЕобрезанному
+  // тексту при расчёте высоты строки грида, а -webkit-line-clamp обрезает
+  // только то, что видно, не сам layout-размер -- в сумме строка грида
+  // растягивалась под весь текст и вылезала за фиксированную высоту
+  // карточки. line-clamp сам по себе это не гарантирует, поэтому вместо
+  // (или в дополнение к) него -- жёсткий max-height в em, завязанный на
+  // line-height, плюс min-height: 0, чтобы грид не мог растянуть строку.
+  min-height: 0;
+  max-height: 2.8em; // 2 строки × line-height 1.4
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-sm);
@@ -241,6 +257,7 @@
   -webkit-line-clamp: 2;
 
   @include utils.respond-up('desktop') {
+    max-height: 4.2em; // 3 строки × line-height 1.4
     -webkit-line-clamp: 3;
   }
 }
