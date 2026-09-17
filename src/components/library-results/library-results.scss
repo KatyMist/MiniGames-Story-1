@@ -1,0 +1,261 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+// ЗАМЕЧАНИЕ ПО РАСКЛАДКЕ (не удалять до подтверждения): в задании даны
+// точные размеры карточки только "для декстопа и ноутбука" (828×200,
+// картинка 320×200, текстовая ячейка 508×200). Для мобильного/планшета
+// точных цифр из Figma ещё не было -- ниже временная простая раскладка
+// (колонка на всю ширину), только чтобы секция не была пустой/сломанной
+// до этих брейкпоинтов. Как только пришлёшь Dev Mode для mobile/tablet --
+// заменю.
+//
+// Почему сетка ниже НЕ переключается на 2 колонки жёстко по брейкпоинту
+// 'laptop'/'desktop', а через flex-wrap: доступная ширина контента при
+// padding-inline: size-15 (120px) с каждой стороны --
+// 1440 - 240 = 1200px (помещается только ОДНА карточка 828px),
+// 1920 - 240 = 1680px (помещается ДВЕ карточки 828px + gap 24px = 1680px --
+// совпадает ровно). Т.е. при буквальных 828px карточки 2 колонки
+// физически возможны только от ~1704px и шире. Flex-wrap подстраивается
+// сам под то, что реально влезает, а не по дстраивается параметр.
+.library-results {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('3');
+  padding: utils.space('2');
+
+  @include utils.respond-up('laptop') {
+    padding-block: utils.space('3');
+    padding-inline: utils.space('15');
+  }
+}
+
+.library-results__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: utils.space('3');
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library-results__card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2.5px solid utils.color('on-primary');
+  border-radius: utils.radius('lg');
+  background: utils.color('white');
+
+  @include utils.respond-up('laptop') {
+    flex-direction: row;
+    width: 828px;
+    height: 200px;
+  }
+}
+
+.library-results__image {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+
+  @include utils.respond-up('laptop') {
+    flex: 0 0 320px;
+    width: 320px;
+    height: 200px;
+  }
+}
+
+.library-results__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: utils.space('1');
+  padding: utils.space('2');
+
+  @include utils.respond-up('laptop') {
+    flex: 0 0 508px;
+    width: 508px;
+    height: 200px;
+    gap: 0;
+  }
+}
+
+.library-results__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: utils.space('1');
+}
+
+.library-results__title-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: utils.space('1');
+  min-width: 0;
+}
+
+.library-results__title {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  // Dev Mode для самого заголовка карточки в этой сетке не присылали --
+  // 'md' (18px) взяла по аналогии с карточкой в New Games
+  // (.new-games__card-title), не проверено для этого конкретного места.
+  font-size: var(--font-size-md);
+  line-height: 1.2;
+  color: utils.color('on-primary');
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Бейдж категории -- ПОЛНАЏ ЗАГЛУШКА. В Dev Mode был только общий размер
+// строки "Title and Badge Row" (476�9r29, justify-content: space-between),
+// без отдельных цветов/паддингов/радиуса самого бейджа. Нужен отдельный
+// снимок Dev Mode именно по этому элементу.
+.library-results__badge {
+  flex-shrink: 0;
+  padding: 2px utils.space('1');
+  border: 1px solid utils.color('on-primary');
+  border-radius: utils.radius('sm');
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: utils.color('on-primary');
+  white-space: nowrap;
+}
+
+.library-results__price {
+  flex-shrink: 0;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  // Dev Mode: size headline-medium -- подтверждённый токен в проекте
+  // (см. комментарий в src/styles/tokens/_typography.scss) -- 'xl' (24px).
+  font-size: var(--font-size-xl);
+  line-height: 1.2;
+  color: utils.color('price-free');
+}
+
+.library-results__description {
+  // Dev Mode: size body-medium -- такого именованного токена в проекте
+  // пока нет, и в отличие от label-large (шкала чипов) померить не по
+  // чему -- реального текста описания не было. 'sm' (14px) -- ВРЕМЕННО,
+  // не подтверждено. Пожалуйста, сверь точный размер в Dev Mode.
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  line-height: 1.4; // 140% из Dev Mode
+  color: utils.color('on-bg');
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.library-results__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: utils.space('1');
+}
+
+.library-results__rating {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: utils.space('05');
+}
+
+.library-results__rating-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  color: utils.color('primary');
+  font-variation-settings: 'FILL' 1;
+}
+
+.library-results__rating-value {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  line-height: 1;
+  color: utils.color('on-primary');
+}
+
+// Кнопка Details -- радиус/паддинги НЕ давали отдельным Dev Mode-снимком
+// (только текст: 48×17, Inter 700, label-large, letter-spacing 50%,
+// color on-primary), поэтому оформление кнопки взяла по аналогии с
+// .library-filters__chip (тот же on-primary контур, 'xl' радиус).
+// letter-spacing 50% НЕ применила: при таком трекинге слово "Details"
+// при 16px жирным было бы значительно шире 48px (это скорее опечатка в
+// снятых данных, либо там имелся в виду другой параметр) -- уточни,
+// пожалуйста, в Dev Mode.
+.library-results__details {
+  flex-shrink: 0;
+  padding: var(--button-padding-block-sm) var(--button-padding-inline-sm);
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('xl');
+  background: utils.color('white');
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  line-height: 1;
+  color: utils.color('on-primary');
+  cursor: pointer;
+}
+
+// Пагинация. Контейнер "320 Hug × 40 Hug" в Dev Mode ровно совпадает с
+// 6 круглыми кнопками по size-5 (40px) + 5 промежутков по size-2 (16px):
+// 6 × 40 + 5 × 16 = 320 -- отсюда именно Prev + 4 страницы + Next, а не
+// произвольное число.
+.library-results__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: utils.space('2');
+}
+
+.library-results__page {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('5');
+  height: utils.space('5');
+  padding: 0;
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('pill');
+  background: utils.color('white');
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  color: utils.color('on-primary');
+  cursor: pointer;
+
+  &--active {
+    background: utils.color('bg-footer-low');
+    color: utils.color('white');
+  }
+
+  // Prev/Next в Dev Mode давали только в disabled-состоянии (opacity 50%,
+  // фон bg, рамка outline-variant). Активный (некликабельный disabled)
+  // Next оформлен как обычная страница (белый фон, on-primary рамка) --
+  // отдельного Dev Mode-снимка для него не было, это предположение по
+  // аналогии, не подтверждено.
+  &--nav:disabled {
+    border-color: utils.color('outline-variant');
+    background: utils.color('bg');
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.library-results__page-icon {
+  font-size: 20px;
+}

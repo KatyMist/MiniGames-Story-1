@@ -6,4 +6,11 @@ $colors: (
   'primary': #ffd02b,
   'on-primary': #242145,
   'on-bg': #5f5d75,
+
+  // Ниже -- токены со скринов Dev Mode для сетки результатов Library
+  // (карточка игры + пагинация). Hex сняты напрямую в Dev Mode (не с
+  // скриншота "на глаз"), поэтому это точные значения, а не оценка.
+  'price-free': #0b8a8f,
+  'outline-variant': #d2d2d2,
+  'bg-footer-low': #2a264f,
 );

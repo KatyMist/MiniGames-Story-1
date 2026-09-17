@@ -5,13 +5,14 @@ import { createHero } from './components/hero/hero';
 import { createFooter } from './components/footer/footer';
 import { createLibraryHeader } from './components/library-header/libraryHeader';
 import { createLibraryFilters } from './components/library-filters/libraryFilters';
+import { createLibraryResults } from './components/library-results/libraryResults';
 
 function renderHomePage(): HTMLElement[] {
   return [createHero()];
 }
 
 function renderLibraryPage(): HTMLElement[] {
-  return [createLibraryHeader(), createLibraryFilters()];
+  return [createLibraryHeader(), createLibraryFilters(), createLibraryResults()];
 }
 
 function renderApp(root: HTMLElement): void {
