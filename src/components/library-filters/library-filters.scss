@@ -59,10 +59,16 @@
   }
 }
 
+// ИСПРАВЛЕНО: на мобилке кнопка сортировки должна тянуться на всю ширину
+// (см. референс) -- align-self: flex-start стоял без media-условия и
+// перебивал align-items: stretch родителя (.library-filters -- колонка на
+// mobile/tablet), из-за чего кнопка сжималась по контенту вместо растяжки.
+// На laptop+ .library-filters становится строкой, там тот же align-self
+// работает уже по вертикали (не растягиваться по высоте строки), поэтому
+// оставляю его, но только с этой точки останова.
 .library-filters__sort {
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
   gap: utils.space('1');
   padding: var(--button-padding-block-sm) var(--button-padding-inline-sm);
   border: var(--border-width-default) solid var(--color-on-primary);
@@ -75,6 +81,10 @@
   letter-spacing: 0;
   color: var(--color-on-primary);
   cursor: pointer;
+
+  @include utils.respond-up('laptop') {
+    align-self: flex-start;
+  }
 }
 
 .library-filters__sort-icon {
