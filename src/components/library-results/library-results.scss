@@ -4,25 +4,20 @@
 // РАСКЛАДКА КАРТОЧКИ: по присланным скринам (tablet/mobile) карточка НЕ
 // становится "картинка сверху, текст снизу" на узких экранах -- она везде
 // остаётся строкой (картинка слева, текст справа), просто гибко сжимается
-// по ширине. Поэтому .library-results__card/__image ниже -- row-раскладка
-// на всех брейкпоинтах; на 'laptop' и шире только "включаются" точные
-// пиксельные размеры из Dev Mode (828×200 / 320×200 / 508×200), а до этого
-// пропорция картинки (320:200 = 8:5) держится через aspect-ratio, и высота
-// карточки не фиксирована -- подстраивается под контент (на узких экранах
-// текста/переносов больше, чем в 200px). Точных Dev Mode-чисел для
-// mobile/tablet пока не было -- сама раскладка (гибкая, не заменяется на
-// колонку) подтверждена скринами, но конкретные px (ширина картинки в %,
-// паддинги, шрифты) -- предположение по скринам, не Dev Mode. Как пришлёшь
-// точные цифры -- поправлю (сама писала "в дальнейшем адаптив").
+// по ширине. Пропорция картинки (320:200 = 8:5) держится через aspect-ratio
+// на всех брейкпоинтах, кроме 'desktop', где включаются точные пиксельные
+// размеры из Dev Mode (828×200 / 320×200 / 508×200).
 //
-// Почему сетка на laptop/desktop НЕ переключается на 2 колонки жёстко по
-// брейкпоинту, а через flex-wrap: доступная ширина контента при
-// padding-inline: size-15 (120px) с каждой стороны --
-// 1440 - 240 = 1200px (помещается только ОДНА карточка 828px),
-// 1920 - 240 = 1680px (помещается ДВЕ карточки 828px + gap 24px = 1680px --
-// совпадает ровно). Т.е. при буквальных 828px карточки 2 колонки
-// физически возможны только от ~1704px и шире. Flex-wrap подстраивается
-// сам под то, что реально влезает, а не под жёстко прибитый брейк.
+// СЕТКА (2 колонки): "828×200" физически не может стоять в 2 колонки на
+// 1440px -- по просьбе сделать 2 колонки и на ноутбуке тоже сетка теперь
+// grid с repeat(2, 1fr), а не жёстко зашитая ширина карточки: колонка сама
+// считается из доступного места. При padding-inline: size-15 (120px) с
+// каждой стороны и gap 24px (space-3):
+// laptop (1440): (1440 - 240 - 24) / 2 = 588px на карточку;
+// desktop (1920): (1920 - 240 - 24) / 2 = 828px -- ровно совпадает с
+// Dev Mode-числом, поэтому именно с этой ширины и включаю фиксированные
+// 828/320/508 (ниже это было бы просто предположением, а не точным
+// значением). Между 1440 и 1920 карточка гибко растёт от 588 до 828.
 .library-results {
   display: flex;
   flex-direction: column;
@@ -36,18 +31,22 @@
 }
 
 .library-results__grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: utils.space('3');
   margin: 0;
   padding: 0;
   list-style: none;
+
+  @include utils.respond-up('laptop') {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .library-results__card {
   display: flex;
   // Строка на всех брейкпоинтах (см. комментарий выше) -- гибкая ширина
-  // до 'laptop', фиксированная (828px) начиная с него.
+  // до 'desktop', фиксированная (828px) начиная с него.
   flex-direction: row;
   align-items: stretch;
   width: 100%;
@@ -56,7 +55,7 @@
   border-radius: utils.radius('lg');
   background: utils.color('white');
 
-  @include utils.respond-up('laptop') {
+  @include utils.respond-up('desktop') {
     width: 828px;
     height: 200px;
   }
@@ -65,14 +64,14 @@
 .library-results__image {
   display: block;
   // Гибкая ширина, но с фиксированной пропорцией 320:200 (=8:5) -- та же,
-  // что и у Dev Mode-размеров, просто без фиксации в px до 'laptop'.
+  // что и у Dev Mode-размеров, просто без фиксации в px до 'desktop'.
   flex: 0 0 38.65%;
   width: 38.65%;
   height: auto;
   aspect-ratio: 8 / 5;
   object-fit: cover;
 
-  @include utils.respond-up('laptop') {
+  @include utils.respond-up('desktop') {
     flex: 0 0 320px;
     width: 320px;
     height: 200px;
@@ -86,14 +85,14 @@
   flex-direction: column;
   // justify-content: space-between имеет эффект только когда высота
   // ячейки зафиксирована (см. .library-results__card -- height: 200px
-  // только от 'laptop'); до этого высота по контенту, gap просто держит
+  // только от 'desktop'); до этого высота по контенту, gap просто держит
   // одинаковые отступы между строками.
   justify-content: space-between;
   gap: utils.space('1');
   min-width: 0;
   padding: utils.space('2');
 
-  @include utils.respond-up('laptop') {
+  @include utils.respond-up('desktop') {
     flex: 0 0 508px;
     width: 508px;
     height: 200px;
@@ -180,11 +179,11 @@
   color: utils.color('on-bg');
   -webkit-box-orient: vertical;
   // По скринам tablet/mobile описание обрезается многоточием на 2 строках
-  // (у́же карточка -- меньше текста в строке). На laptop+ высота ячейки
+  // (у́же карточка -- меньше текста в строке). На desktop высота ячейки
   // фиксирована (476×67 из Dev Mode) -- туда помещается 3 строки.
   -webkit-line-clamp: 2;
 
-  @include utils.respond-up('laptop') {
+  @include utils.respond-up('desktop') {
     -webkit-line-clamp: 3;
   }
 }
