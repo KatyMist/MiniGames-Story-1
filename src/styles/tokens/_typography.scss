@@ -1,0 +1,33 @@
+// В макете используется только Inter (в т.ч. для заголовков) —
+// проверено в Figma (панель Properties, Typography -> Font).
+$font-families: (
+  'base': (
+    'Inter',
+    sans-serif,
+  ),
+  'heading': (
+    'Inter',
+    sans-serif,
+  ),
+);
+
+// 'base' (16px) и 'xl' (24px) сверены с токенами Figma
+// (title-xx-small и headline-medium соответственно).
+$font-sizes: (
+  'xs': 12px,
+  'sm': 14px,
+  'base': 16px,
+  'md': 18px,
+  'lg': 20px,
+  'xl': 24px,
+  '2xl': 32px,
+  '3xl': 40px,
+  '4xl': 56px,
+);
+
+$font-weights: (
+  'regular': 400,
+  'medium': 500,
+  'semibold': 600,
+  'bold': 700,
+);

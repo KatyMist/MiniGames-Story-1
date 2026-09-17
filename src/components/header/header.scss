@@ -1,0 +1,158 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.header {
+  background-color: utils.color('bg');
+  border-bottom: var(--border-width-default) solid utils.color('on-primary');
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    padding: utils.space('2') utils.space('5');
+  }
+
+  @include utils.respond-up('desktop') {
+    padding: utils.space('3') utils.space('10');
+  }
+}
+
+.header__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: utils.space('1');
+}
+
+.header__logo-icon {
+  display: block;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: utils.space('4');
+  height: utils.space('4');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  background-color: utils.color('white');
+}
+
+.header__logo-text {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: utils.color('on-primary');
+}
+
+// Полный инлайн-навбар (ссылки + действия) -- только от laptop (1440px).
+// На планшете вместо него -- одна CTA-кнопка + бургер (.header__cta,
+// .header__mobile-controls ниже), полный список ссылок живёт в
+// бургер-меню.
+.header__nav {
+  display: none;
+  align-items: center;
+  gap: utils.space('4');
+
+  @include utils.respond-up('laptop') {
+    display: flex;
+  }
+}
+
+.header__links {
+  display: flex;
+  align-items: center;
+  gap: utils.space('5');
+}
+
+.header__link {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+
+  &:hover,
+  &:focus-visible {
+    color: utils.color('primary');
+  }
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: utils.space('2');
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: utils.space('1');
+}
+
+.header__user-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+}
+
+.header__user-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('4');
+  height: utils.space('4');
+  border-radius: utils.radius('pill');
+  background-color: utils.color('on-primary');
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('white');
+}
+
+// Обёртка для планшета/мобилки: CTA-кнопка (только с tablet, см. ниже) +
+// бургер. Скрывается целиком от laptop, где вместо неё виден .header__nav.
+.header__mobile-controls {
+  display: flex;
+  align-items: center;
+  gap: utils.space('2');
+
+  @include utils.respond-up('laptop') {
+    display: none;
+  }
+}
+
+// Одна CTA-кнопка на планшете (Sign Up / Log Out) -- на мобильном её нет
+// вообще (по референсу навбара мобильная шапка -- это только лого+бургер,
+// Log In/Sign Up/Log Out там доступны из бургер-меню).
+.header__cta {
+  display: none;
+
+  @include utils.respond-up('tablet') {
+    display: inline-flex;
+  }
+}
+
+// ИСПРАВЛЕНО: бургер раньше скрывался уже от tablet (display:none), из-за
+// чего на планшете пропадала кнопка меню -- по референсу навбара бургер
+// должен быть виден и на mobile, и на tablet, и скрываться только от
+// laptop, когда появляется полный инлайн-навбар.
+.header__burger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: utils.space('05');
+  width: utils.space('4');
+  height: utils.space('4');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  background-color: utils.color('white');
+  padding: 0;
+}
+
+.header__burger-line {
+  display: block;
+  width: 60%;
+  height: var(--border-width-default);
+  background-color: utils.color('on-primary');
+}

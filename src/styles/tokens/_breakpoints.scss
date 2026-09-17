@@ -1,0 +1,8 @@
+// Контрольные точки адаптива (используются только в Sass-миксинах,
+// т.к. media query не умеет читать CSS custom properties).
+$breakpoints: (
+  'mobile': 375px,
+  'tablet': 768px,
+  'laptop': 1440px,
+  'desktop': 1920px,
+);
