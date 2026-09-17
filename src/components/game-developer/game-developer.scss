@@ -1,0 +1,105 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.game-developer {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('2');
+  padding: utils.space('2');
+  border-bottom: 1px solid utils.color('on-primary');
+
+  @include utils.respond-up('tablet') {
+    gap: utils.space('3');
+    padding-block: utils.space('3');
+    padding-inline: utils.space('5');
+  }
+
+  @media (min-width: 1440px) {
+    flex-direction: row;
+    align-items: center;
+    gap: utils.space('5');
+    padding-block: utils.space('5');
+    padding-inline: utils.space('15');
+  }
+}
+
+.game-developer__image {
+  display: block;
+  width: 100%;
+  height: 240px;
+  border-radius: utils.radius('card-md');
+  object-fit: cover;
+
+  @include utils.respond-up('tablet') {
+    height: 300px;
+    border-radius: utils.radius('xl');
+  }
+
+  @media (min-width: 1440px) {
+    width: 680px;
+    height: 480px;
+    border-radius: utils.radius('xl');
+    transform: rotate(0.24deg);
+  }
+}
+
+.game-developer__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: utils.space('2');
+  flex: 1;
+  padding: utils.space('3');
+  border: 2px solid utils.color('on-primary');
+  border-radius: utils.radius('card-md');
+  background-color: utils.color('white');
+
+  @include utils.respond-up('tablet') {
+    justify-content: flex-start;
+    padding: utils.space('4');
+    border-radius: utils.radius('xl');
+    box-shadow:
+      0 14px 30px -10px rgba(0, 0, 0, 0.0784),
+      0 2px 8px -4px rgba(0, 0, 0, 0.0392);
+  }
+
+  @media (min-width: 1440px) {
+    flex: 1;
+    max-width: 958px;
+  }
+}
+
+.game-developer__title {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  line-height: 1.2;
+  color: utils.color('on-primary');
+
+  @media (min-width: 1440px) {
+    font-size: var(--font-size-xl);
+  }
+}
+
+.game-developer__text {
+  margin: 0;
+  max-width: 32em;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: utils.color('on-bg');
+
+  @media (min-width: 1440px) {
+    font-size: var(--font-size-base);
+  }
+}
+
+.game-developer__cta-icon {
+  margin-right: utils.space('1');
+  font-size: 18px;
+}
+
+.game-developer__contact {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: utils.color('on-bg');
+}

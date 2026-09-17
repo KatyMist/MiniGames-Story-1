@@ -3,9 +3,16 @@ import { createHeader } from './components/header/header';
 import { createHero } from './components/hero/hero';
 import { createNewGames } from './components/new-games/newGames';
 import { createLeaderboard } from './components/leaderboard/leaderboard';
+import { createGameDeveloper } from './components/game-developer/gameDeveloper';
 
 function renderApp(root: HTMLElement): void {
-  root.append(createHeader(), createHero(), createNewGames(), createLeaderboard());
+  root.append(
+    createHeader(),
+    createHero(),
+    createNewGames(),
+    createLeaderboard(),
+    createGameDeveloper(),
+  );
 }
 
 function mountApp(): void {
