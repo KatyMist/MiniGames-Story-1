@@ -151,7 +151,7 @@ function createRow(player: Player): HTMLTableRowElement {
 export function createLeaderboard(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'leaderboard';
-  section.setAttribute('aria-label', 'Таблица лидеров');
+  section.setAttribute('aria-label', 'Leaderboard');
 
   const header = document.createElement('div');
   header.className = 'leaderboard__header';
