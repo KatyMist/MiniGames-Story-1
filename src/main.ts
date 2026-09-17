@@ -1,15 +1,19 @@
 import './styles/main.scss';
+
 import { createHeader } from './components/header/header';
 import { createHero } from './components/hero/hero';
+import { createFooter } from './components/footer/footer';
 
 function renderApp(root: HTMLElement): void {
-  root.append(createHeader(), createHero());
+  root.append(createHeader(), createHero(), createFooter());
 }
 
 function mountApp(): void {
   const root = document.createElement('div');
+
   root.id = 'app';
   document.body.append(root);
+
   renderApp(root);
 }
 
