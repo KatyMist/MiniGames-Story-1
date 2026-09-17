@@ -90,7 +90,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'auth-dialog__input-toggle';
-  toggle.setAttribute('aria-label', 'Показать пароль');
+  toggle.setAttribute('aria-label', 'Show password');
 
   const toggleIcon = document.createElement('span');
   toggleIcon.className = 'material-symbols-outlined';
@@ -102,7 +102,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
     const isCurrentlyHidden = input.type === 'password';
     input.type = isCurrentlyHidden ? 'text' : 'password';
     toggleIcon.textContent = isCurrentlyHidden ? 'visibility_off' : 'visibility';
-    toggle.setAttribute('aria-label', isCurrentlyHidden ? 'Скрыть пароль' : 'Показать пароль');
+    toggle.setAttribute('aria-label', isCurrentlyHidden ? 'Hide password' : 'Show password');
   });
 
   wrap.append(icon, input, toggle);
@@ -315,7 +315,7 @@ export function createAuthDialog(): AuthDialogHandle {
   panel.className = 'auth-dialog__panel';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'true');
-  panel.setAttribute('aria-label', 'Авторизация');
+  panel.setAttribute('aria-label', 'Authentication');
 
   const tabs = document.createElement('div');
   tabs.className = 'auth-dialog__tabs';
@@ -338,8 +338,12 @@ export function createAuthDialog(): AuthDialogHandle {
   tabs.append(loginTab, registerTab);
 
   const content = document.createElement('div');
+  content.id = 'auth-dialog-panel';
   content.className = 'auth-dialog__content';
   content.setAttribute('role', 'tabpanel');
+
+  loginTab.setAttribute('aria-controls', 'auth-dialog-panel');
+  registerTab.setAttribute('aria-controls', 'auth-dialog-panel');
 
   let isOpen = false;
   let mode: AuthMode = 'login';

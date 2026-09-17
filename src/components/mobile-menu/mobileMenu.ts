@@ -37,7 +37,7 @@ function createCloseButton(onClose: () => void): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'mobile-menu__close';
-  button.setAttribute('aria-label', 'Закрыть меню');
+  button.setAttribute('aria-label', 'Close menu');
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined';
@@ -75,6 +75,7 @@ function createNavLinks(
 
     if (!isPlaceholder && linkRoute === currentRoute) {
       link.classList.add('mobile-menu__link--active');
+      link.setAttribute('aria-current', 'page');
     }
 
     link.addEventListener('click', onNavigate);
@@ -141,7 +142,7 @@ export function createMobileMenu(
   panel.className = 'mobile-menu__panel';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'true');
-  panel.setAttribute('aria-label', 'Мобильное меню');
+  panel.setAttribute('aria-label', 'Mobile menu');
 
   let isOpen = false;
 

@@ -20,7 +20,7 @@ function createLogo(): HTMLAnchorElement {
   const logo = document.createElement('a');
   logo.className = 'header__logo';
   logo.href = '/';
-  logo.setAttribute('aria-label', 'MiniGames — на главную');
+  logo.setAttribute('aria-label', 'MiniGames — home');
 
   const icon = document.createElement('img');
   icon.className = 'header__logo-icon';
@@ -139,7 +139,7 @@ function createTabletCta(openAuth: (mode: AuthMode) => void): HTMLDivElement {
 function createNav(openAuth: (mode: AuthMode) => void): HTMLElement {
   const nav = document.createElement('nav');
   nav.className = 'header__nav';
-  nav.setAttribute('aria-label', 'Основная навигация');
+  nav.setAttribute('aria-label', 'Main navigation');
   nav.append(createNavLinks(), createDesktopActions(openAuth));
 
   return nav;
@@ -160,7 +160,7 @@ function createBurgerButton(): HTMLButtonElement {
   const burger = document.createElement('button');
   burger.type = 'button';
   burger.className = 'header__burger';
-  burger.setAttribute('aria-label', 'Открыть меню');
+  burger.setAttribute('aria-label', 'Open menu');
   burger.setAttribute('aria-expanded', 'false');
 
   for (let i = 0; i < 3; i += 1) {
@@ -191,7 +191,7 @@ export function createHeader(): HTMLElement {
     NAV_LINKS,
     (isOpen) => {
       burger.setAttribute('aria-expanded', String(isOpen));
-      burger.setAttribute('aria-label', isOpen ? 'Закрыть меню' : 'Открыть меню');
+      burger.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
     },
     (mode) => authDialog.open(mode),
   );
