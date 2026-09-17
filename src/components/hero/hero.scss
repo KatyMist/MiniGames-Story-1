@@ -4,6 +4,8 @@
 .hero {
   position: relative;
   overflow: hidden;
+  width: 100%;
+  aspect-ratio: 375 / 331;
 
   &::before,
   &::after {
@@ -13,19 +15,28 @@
   }
 
   // Фоновая картинка (Figma: Hero Section -> Fill hero-bg, Scale: Crop,
-  // Opacity 20%).
+  // Opacity 100%).
   &::before {
     z-index: 0;
     background-image: url('../../assets/images/hero-bg.png');
     background-position: center;
     background-size: cover;
-    opacity: 0.2;
+    opacity: 1;
   }
 
   // Цветной оверлей поверх картинки (Figma: заливка #1E1B3A, 65%).
   &::after {
     z-index: 0;
     background-color: rgb(30 27 58 / 65%);
+  }
+
+  @include utils.respond-up('tablet') {
+    aspect-ratio: 768 / 383;
+  }
+
+  @include utils.respond-up('laptop') {
+    aspect-ratio: 1920 / 627;
+    border-bottom: 2px solid utils.color('on-primary'); // цвет рамки не указан в задаче — сверить с макетом
   }
 }
 
@@ -39,7 +50,7 @@
     padding: utils.space('9') utils.space('5');
   }
 
-  @include utils.respond-up('desktop') {
+  @include utils.respond-up('laptop') {
     padding: utils.space('14') utils.space('15');
   }
 }
@@ -50,27 +61,22 @@
   width: 100%;
   gap: utils.space('2');
   padding: utils.space('3');
-  // Толщина рамки, радиус и тень отличаются по брейкпоинтам -- сверено в
-  // Figma для Hero Text Box на каждом из трёх фреймов (mobile/tablet/desktop).
   border: 2px solid utils.color('on-primary');
   border-radius: utils.radius('card-md');
   background-color: utils.color('bg');
-  box-shadow: utils.shadow('hard-sm');
 
   @include utils.respond-up('tablet') {
     width: 480px;
     border-width: 2.5px;
     border-radius: utils.radius('lg');
-    box-shadow: utils.shadow('hard-md');
   }
 
-  @include utils.respond-up('desktop') {
+  @include utils.respond-up('laptop') {
     width: 640px;
     gap: utils.space('3');
     padding: utils.space('6');
     border-width: 3px;
     border-radius: utils.radius('xl');
-    box-shadow: utils.shadow('hard');
   }
 }
 
@@ -90,7 +96,7 @@
     line-height: 1.15;
   }
 
-  @include utils.respond-up('desktop') {
+  @include utils.respond-up('laptop') {
     // display-large из Figma -- сверено через hover-подсказку токена.
     font-size: var(--font-size-4xl);
     line-height: 1.1;
@@ -109,7 +115,7 @@
     line-height: 1.5;
   }
 
-  @include utils.respond-up('desktop') {
+  @include utils.respond-up('laptop') {
     // body-large из Figma -- сверено через hover-подсказку токена.
     font-size: var(--font-size-md);
     line-height: 1.5;

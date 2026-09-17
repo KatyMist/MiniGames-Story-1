@@ -4,6 +4,7 @@ import { createHero } from './components/hero/hero';
 import { createNewGames } from './components/new-games/newGames';
 import { createLeaderboard } from './components/leaderboard/leaderboard';
 import { createGameDeveloper } from './components/game-developer/gameDeveloper';
+import { createFooter } from './components/footer/footer';
 
 function renderApp(root: HTMLElement): void {
   root.append(
@@ -12,6 +13,7 @@ function renderApp(root: HTMLElement): void {
     createNewGames(),
     createLeaderboard(),
     createGameDeveloper(),
+    createFooter(),
   );
 }
 
