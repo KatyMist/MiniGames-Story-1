@@ -1,6 +1,7 @@
 import './header.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
 import { createMobileMenu } from '../mobile-menu/mobileMenu';
+import { CURRENT_USER } from '../../shared/authState';
 
 interface NavLink {
   label: string;
@@ -53,9 +54,43 @@ function createNavLinks(): HTMLUListElement {
   return list;
 }
 
-function createActions(): HTMLDivElement {
+function createLogOutButton(): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn btn--outline';
+  button.textContent = 'Log Out';
+  return button;
+}
+
+function createUserBadge(): HTMLDivElement {
+  const user = document.createElement('div');
+  user.className = 'header__user';
+
+  const name = document.createElement('span');
+  name.className = 'header__user-name';
+  name.textContent = CURRENT_USER.name;
+
+  const avatar = document.createElement('span');
+  avatar.className = 'header__user-avatar';
+  avatar.textContent = CURRENT_USER.initials;
+  avatar.setAttribute('aria-hidden', 'true');
+
+  user.append(name, avatar);
+
+  return user;
+}
+
+// Полный блок действий -- только для laptop+ (см. header.scss), где виден
+// весь инлайн-навбар. Гость видит Log In + Sign Up, авторизованный -- имя
+// с аватаром и Log Out (по присланному референсу навбара).
+function createDesktopActions(): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'header__actions';
+
+  if (CURRENT_USER.isLoggedIn) {
+    actions.append(createUserBadge(), createLogOutButton());
+    return actions;
+  }
 
   const logIn = document.createElement('button');
   logIn.type = 'button';
@@ -72,13 +107,44 @@ function createActions(): HTMLDivElement {
   return actions;
 }
 
+// На планшете (768–1439) от полного набора действий остаётся только одна
+// кнопка -- по референсу навбара, Log In там вообще не показывается
+// (только Sign Up у гостя / Log Out у авторизованного), полный список
+// доступен через бургер-меню.
+function createTabletCta(): HTMLDivElement {
+  const cta = document.createElement('div');
+  cta.className = 'header__cta';
+
+  if (CURRENT_USER.isLoggedIn) {
+    cta.append(createLogOutButton());
+    return cta;
+  }
+
+  const signUp = document.createElement('button');
+  signUp.type = 'button';
+  signUp.className = 'btn btn--primary';
+  signUp.textContent = 'Sign Up';
+
+  cta.append(signUp);
+
+  return cta;
+}
+
 function createNav(): HTMLElement {
   const nav = document.createElement('nav');
   nav.className = 'header__nav';
   nav.setAttribute('aria-label', 'Основная навигация');
-  nav.append(createNavLinks(), createActions());
+  nav.append(createNavLinks(), createDesktopActions());
 
   return nav;
+}
+
+function createMobileControls(burger: HTMLButtonElement): HTMLDivElement {
+  const controls = document.createElement('div');
+  controls.className = 'header__mobile-controls';
+  controls.append(createTabletCta(), burger);
+
+  return controls;
 }
 
 function createBurgerButton(): HTMLButtonElement {
@@ -118,7 +184,7 @@ export function createHeader(): HTMLElement {
     menu.toggle();
   });
 
-  inner.append(createLogo(), createNav(), burger);
+  inner.append(createLogo(), createNav(), createMobileControls(burger));
   header.append(inner, menu.element);
 
   return header;

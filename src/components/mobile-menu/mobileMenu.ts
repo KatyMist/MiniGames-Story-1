@@ -1,5 +1,6 @@
 import './mobile-menu.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
+import { CURRENT_USER } from '../../shared/authState';
 
 interface MobileMenuLink {
   label: string;
@@ -11,14 +12,6 @@ interface MobileMenuHandle {
   toggle: () => boolean;
   close: () => void;
 }
-
-// В проекте пока нигде нет модуля авторизации (src/app и src/shared —
-// только заглушки, grep по "auth"/"isLoggedIn" ничего не находит), поэтому
-// состояние логина здесь — локальная константа-заглушка, как и в
-// createActions() в header.ts (там тоже всегда Log In/Sign Up). Когда
-// появится реальная авторизация, сюда достаточно передать актуальный флаг
-// вместо константы.
-const IS_LOGGED_IN = false;
 
 function createLogo(): HTMLDivElement {
   const logo = document.createElement('div');
@@ -95,7 +88,7 @@ function createActions(): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'mobile-menu__actions';
 
-  if (IS_LOGGED_IN) {
+  if (CURRENT_USER.isLoggedIn) {
     const logOut = document.createElement('button');
     logOut.type = 'button';
     logOut.className = 'btn btn--outline-light';
