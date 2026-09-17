@@ -1,13 +1,25 @@
 @use '../../styles/tokens';
 @use '../../styles/utils';
 
-// РАСКЛАДКА КАРТОЧКИ: по присланным скринам (tablet/mobile) карточка НЕ
-// становится "картинка сверху, текст снизу" на узких экранах -- она везде
-// остаётся строкой (картинка слева, текст справа), просто гибко сжимается
-// по ширине. Пропорция картинки (320:200 = 8:5) держится через aspect-ratio
-// на всех брейкпоинтах, кроме 'desktop', где включаются точные пиксельные
-// размеры из Dev Mode (828×200 / 320×200 / 508×200).
+// РАСКЛАДКА КАРТОЧКИ: ИСПРАВЛЕНО отдельным скрином именно для мобилки --
+// на mobile карточка становится колонкой (картинка сверху на всю ширину,
+// текст под ней, кнопка Details на всю ширину отдельной строкой) -- это
+// НЕ то же самое, что раскладка на скрине с tablet (там строка: картинка
+// слева, текст справа). Строка (картинка слева/текст справа) остаётся
+// только от 'tablet' и шире; пропорция картинки (320:200 = 8:5) держится
+// через aspect-ratio на mobile/tablet/laptop, а на 'desktop' включаются
+// точные пиксельные размеры из Dev Mode (828×200 / 320×200 / 508×200).
 //
+// Порядок блоков внутри карточки тоже отличается на mobile: заголовок и
+// бейдж идут друг под другом (не в одну строку), а цена -- уже не рядом с
+// заголовком, а в одной строке с рейтингом/лайками; кнопка -- отдельной
+// строкой на всю ширину. От 'tablet' и шире порядок -- как было раньше
+// (подтверждено Dev Mode: "Title and Badge Row" с ценой через
+// space-between, отдельно строка рейтинг/лайки + кнопка). Чтобы не менять
+// порядок элементов в разметке ради этого, .library-results__content --
+// CSS grid с именованными областями, а .library-results__top/__bottom
+// (обёртки из libraryResults.ts) -- display: contents, чтобы их дети
+// (title-group/price/stats/details) стали прямыми grid-элементами.
 // СЕТКА (2 колонки): "828×200" физически не может стоять в 2 колонки на
 // 1440px -- по просьбе сделать 2 колонки и на ноутбуке тоже сетка теперь
 // grid с repeat(2, 1fr), а не жёстко зашитая ширина карточки: колонка сама
@@ -45,15 +57,19 @@
 
 .library-results__card {
   display: flex;
-  // Строка на всех брейкпоинтах (см. комментарий выше) -- гибкая ширина
-  // до 'desktop', фиксированная (828px) начиная с него.
-  flex-direction: row;
+  // Колонка на mobile (картинка сверху), строка от 'tablet' и шире
+  // (картинка слева) -- см. комментарий выше.
+  flex-direction: column;
   align-items: stretch;
   width: 100%;
   overflow: hidden;
   border: 2.5px solid utils.color('on-primary');
   border-radius: utils.radius('lg');
   background: utils.color('white');
+
+  @include utils.respond-up('tablet') {
+    flex-direction: row;
+  }
 
   @include utils.respond-up('desktop') {
     width: 828px;
@@ -63,13 +79,18 @@
 
 .library-results__image {
   display: block;
-  // Гибкая ширина, но с фиксированной пропорцией 320:200 (=8:5) -- та же,
-  // что и у Dev Mode-размеров, просто без фиксации в px до 'desktop'.
-  flex: 0 0 38.65%;
-  width: 38.65%;
+  // На mobile -- на всю ширину карточки, с той же пропорцией 8:5. От
+  // 'tablet' -- гибкая ширина в процентах с той же пропорцией (без
+  // фиксации в px), от 'desktop' -- точные px из Dev Mode.
+  width: 100%;
   height: auto;
   aspect-ratio: 8 / 5;
   object-fit: cover;
+
+  @include utils.respond-up('tablet') {
+    flex: 0 0 38.65%;
+    width: 38.65%;
+  }
 
   @include utils.respond-up('desktop') {
     flex: 0 0 320px;
@@ -80,40 +101,70 @@
 }
 
 .library-results__content {
-  display: flex;
+  display: grid;
   flex: 1 1 auto;
-  flex-direction: column;
-  // justify-content: space-between имеет эффект только когда высота
-  // ячейки зафиксирована (см. .library-results__card -- height: 200px
-  // только от 'desktop'); до этого высота по контенту, gap просто держит
-  // одинаковые отступы между строками.
-  justify-content: space-between;
+  // Колонки: основная (растягивается) + узкая под цену/кнопку по контенту.
+  grid-template-columns: 1fr auto;
+  // Mobile: заголовок+бейдж друг под другом, цена -- в одной строке со
+  // статистикой (не с заголовком), кнопка -- своей строкой на всю ширину.
+  grid-template-areas:
+    'topgroup topgroup'
+    'desc desc'
+    'stats price'
+    'button button';
   gap: utils.space('1');
   min-width: 0;
   padding: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    // От tablet -- как подтверждено Dev Mode: заголовок+бейдж и цена в
+    // одной строке (space-between), затем описание, затем рейтинг/лайки
+    // и кнопка в одной строке.
+    grid-template-areas:
+      'topgroup price'
+      'desc desc'
+      'stats button';
+  }
 
   @include utils.respond-up('desktop') {
     flex: 0 0 508px;
     width: 508px;
     height: 200px;
     gap: 0;
+    // Три строки заполняют фиксированные 200px с равными промежутками --
+    // grid-аналог прежнего flex justify-content: space-between.
+    align-content: space-between;
   }
 }
 
-.library-results__top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: utils.space('1');
+// Обёртки из libraryResults.ts -- сами не создают бокс (display: contents),
+// их дети (title-group/price, stats/details) становятся прямыми
+// grid-элементами .library-results__content и расставляются по areas выше
+// без изменения порядка в разметке.
+.library-results__top,
+.library-results__bottom {
+  display: contents;
 }
 
 .library-results__title-group {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: utils.space('1');
+  // Заголовок над бейджем на mobile, в одну строку от 'tablet'. align-items:
+  // stretch (не flex-start) -- чтобы заголовок мог растянуться на всю
+  // ширину карточки и многоточие (text-overflow у .library-results__title)
+  // реально сработало на длинных названиях; бейдж из этого стрейча
+  // выключен через align-self ниже.
+  flex-direction: column;
+  align-items: stretch;
+  gap: utils.space('05');
+  grid-area: topgroup;
   min-width: 0;
+
+  @include utils.respond-up('tablet') {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: utils.space('1');
+  }
 }
 
 .library-results__title {
@@ -141,6 +192,9 @@
 // 67 - 2×8(паддинг size-1) = 51px, а 68 × (12/16) = 51 -- сходится ровно.
 .library-results__badge {
   flex-shrink: 0;
+  // Не растягивается вместе с заголовком (align-items: stretch у родителя
+  // на mobile) -- бейдж всегда по контенту (Hug), как в Dev Mode.
+  align-self: flex-start;
   padding: utils.space('05') utils.space('1');
   border: 1.5px solid utils.color('on-primary');
   border-radius: utils.radius('xl');
@@ -155,6 +209,9 @@
 
 .library-results__price {
   flex-shrink: 0;
+  grid-area: price;
+  align-self: center;
+  justify-self: end;
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-bold);
   // Dev Mode: size headline-medium -- подтверждённый токен в проекте
@@ -188,19 +245,14 @@
   }
 }
 
-.library-results__bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: utils.space('1');
-}
-
 // Рейтинг + лайки вместе (см. комментарий у createStat в libraryResults.ts
 // про то, почему лайки вернулись после того, как я их сначала убрала).
 .library-results__stats {
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  align-self: center;
+  grid-area: stats;
   gap: utils.space('2');
   min-width: 0;
 }
@@ -238,23 +290,34 @@
 // Кнопка Details -- радиус/паддинги НЕ давали отдельным Dev Mode-снимком
 // (только текст: 48×17, Inter 700, label-large, letter-spacing 50%,
 // color on-primary), поэтому оформление кнопки взяла по аналогии с
-// .library-filters__chip (тот же on-primary контур, 'xl' радиус).
+// .btn--primary (src/styles/base/_buttons.scss): заливка primary (жёлтый)
+// + текст/рамка on-primary -- это же видно и на скринах (кнопка везде
+// жёлтая, а не белая с рамкой, как было раньше -- поправила).
 // letter-spacing 50% НЕ применила: при таком трекинге слово "Details"
 // при 16px жирным было бы значительно шире 48px (это скорее опечатка в
 // снятых данных, либо там имелся в виду другой параметр) -- уточни,
 // пожалуйста, в Dev Mode.
 .library-results__details {
   flex-shrink: 0;
+  grid-area: button;
+  // На mobile кнопка -- отдельная строка на всю ширину (см. скрин);
+  // от 'tablet' -- обычная кнопка по контенту, как раньше.
+  width: 100%;
   padding: var(--button-padding-block-sm) var(--button-padding-inline-sm);
   border: var(--border-width-default) solid utils.color('on-primary');
   border-radius: utils.radius('xl');
-  background: utils.color('white');
+  background: utils.color('primary');
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-base);
   line-height: 1;
   color: utils.color('on-primary');
+  text-align: center;
   cursor: pointer;
+
+  @include utils.respond-up('tablet') {
+    width: auto;
+  }
 }
 
 // Пагинация. Контейнер "320 Hug × 40 Hug" в Dev Mode ровно совпадает с
