@@ -6,32 +6,23 @@
   flex-direction: column;
   gap: utils.space('2');
   padding: utils.space('2');
-  // По Dev Mode Figma (мобилки/планшет): у секции снизу тонкая линия-разделитель
-  // (border-bottom-width: 1px) — на десктопе в спеках её нет.
   border-bottom: 1px solid utils.color('on-primary');
 
-  // На планшете картинка и карточка по-прежнему стоят одна под другой (как
-  // на мобилках) — это подтверждено в Dev Mode: у планшетного фрейма один
-  // общий размер (375 -> 768, 566 -> 628), а не раскладка в два столбца.
-  // В два столбца (flex-direction: row) секция переходит только на десктопе.
   @include utils.respond-up('tablet') {
     gap: utils.space('3');
     padding-block: utils.space('3');
     padding-inline: utils.space('5');
   }
 
-  @include utils.respond-up('desktop') {
+  @media (min-width: 1440px) {
     flex-direction: row;
-    align-items: stretch;
+    align-items: center;
     gap: utils.space('5');
     padding-block: utils.space('5');
     padding-inline: utils.space('15');
-    border-bottom: none;
   }
 }
 
-// Картинка — без рамки и без тени (в отличие от таблицы выше): в макете
-// это просто заливка + иллюстрация со скруглёнными углами.
 .game-developer__image {
   display: block;
   width: 100%;
@@ -40,21 +31,18 @@
   object-fit: cover;
 
   @include utils.respond-up('tablet') {
-    border-radius: utils.radius('lg');
+    height: 300px;
+    border-radius: utils.radius('xl');
   }
 
-  // Раскладка в два столбца (картинка слева, карточка справа) появляется
-  // только на десктопе — на планшете картинка всё ещё во всю ширину, одна
-  // над карточкой (см. комментарий у .game-developer выше).
-  @include utils.respond-up('desktop') {
-    width: 42%;
-    height: auto;
+  @media (min-width: 1440px) {
+    width: 680px;
+    height: 480px;
     border-radius: utils.radius('xl');
+    transform: rotate(0.24deg);
   }
 }
 
-// Карточка с текстом — тоже без тени, только рамка (по просьбе заказчика:
-// тень есть только у таблицы Top Players This Week выше).
 .game-developer__card {
   display: flex;
   flex-direction: column;
@@ -67,14 +55,17 @@
   background-color: utils.color('white');
 
   @include utils.respond-up('tablet') {
-    justify-content: center;
+    justify-content: flex-start;
     padding: utils.space('4');
-    border-radius: utils.radius('lg');
+    border-radius: utils.radius('xl');
+    box-shadow:
+      0 14px 30px -10px rgba(0, 0, 0, 0.0784),
+      0 2px 8px -4px rgba(0, 0, 0, 0.0392);
   }
 
-  @include utils.respond-up('desktop') {
-    padding: utils.space('5');
-    border-radius: utils.radius('xl');
+  @media (min-width: 1440px) {
+    flex: 1;
+    max-width: 958px;
   }
 }
 
@@ -85,7 +76,7 @@
   line-height: 1.2;
   color: utils.color('on-primary');
 
-  @include utils.respond-up('desktop') {
+  @media (min-width: 1440px) {
     font-size: var(--font-size-xl);
   }
 }
@@ -97,13 +88,10 @@
   line-height: 1.5;
   color: utils.color('on-bg');
 
-  @include utils.respond-up('desktop') {
+  @media (min-width: 1440px) {
     font-size: var(--font-size-base);
   }
 }
-
-// Отступ сверху уже даёт gap на .game-developer__card — свой margin-top
-// у кнопки был бы задвоением того же отступа.
 
 .game-developer__cta-icon {
   margin-right: utils.space('1');
