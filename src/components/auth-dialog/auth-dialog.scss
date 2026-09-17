@@ -181,8 +181,11 @@
   cursor: pointer;
 }
 
+// Тень на кнопках Login/Create Account -- по образцу уже принятой в
+// проекте "жёсткой" тени без блюра (см. library-results/leaderboard).
 .auth-dialog__submit {
   width: 100%;
+  box-shadow: utils.shadow('hard-sm');
 }
 
 .auth-dialog__divider {
