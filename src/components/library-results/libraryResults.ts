@@ -16,89 +16,99 @@ interface LibraryGame {
   description: string;
 }
 
-// ВНИМАНИЕ (не удалять до подтверждения): category/price/description ниже —
-// ЗАГЛУШКИ. В присланных скринах Dev Mode были только размеры и текстовые
-// стили этих полей (Title and Badge Row 476×29, price "Free" 52×29
-// headline-medium/price-free, description 476×67 body-medium/on-bg), но не
-// сам контент по каждой из 6 карточек. Рейтинг для "Vacation Cafe Simulator"
-// и "Winter Burrow" — уже подтверждённые значения из
-// src/components/new-games/newGames.ts. "Shelve the Potions!" там же
-// помечен как неподтверждённый — перенесла как есть. Для "Heartopia",
-// "Palia" и "Cat Mail Co." рейтинга/лайков в макете вообще не видела —
-// заглушки. Лайки в эту карточку НЕ добавляю: блок рейтинга в Dev Mode
-// (68 Hug × 24 Hug) слишком узкий, чтобы вместить ещё и лайки — похоже,
-// сюда идёт только рейтинг.
+// Данные ниже — с присланных мокапов страницы Library (tablet/mobile
+// скрины с полным списком карточек): category/price/rating/likes читаются
+// прямо с карточек, description — из отдельного текстового списка. Рейтинг
+// и лайки для "Vacation Cafe Simulator" и "Winter Burrow" совпали с ранее
+// подтверждённым в src/components/new-games/newGames.ts; "Shelve the
+// Potions!" там был помечен как неподтверждённый (4.4/7.1K) — по новому
+// скрину заменила на настоящие 4.7/21.3K.
 const GAMES: readonly LibraryGame[] = [
   {
     title: 'Vacation Cafe Simulator',
     imageUrl: vacationCardUrl,
-    category: 'Category',
+    category: 'Strategy',
     price: 'Free',
     rating: '4.8',
     likes: '28.7K',
-    description: 'Описание ожидает точного текста из макета.',
+    description:
+      'Cozy Italian Vacation Cafe \u{1F3D6}\u{FE0F} No timers, No stress \u{1F60C} cook traditional dishes \u{1F35D} upgrade and customize \u{1F3E0} just drink Prosecco \u{1F942} relax and grow your dream cafe \u{2728}',
   },
   {
     title: 'Winter Burrow',
     imageUrl: winterBurrowCardUrl,
-    category: 'Category',
+    category: 'Farm',
     price: 'Free',
     rating: '4.9',
     likes: '32.4K',
-    description: 'Описание ожидает точного текста из макета.',
+    description:
+      'A cozy woodland survival game about a mouse restoring their childhood burrow. Explore, gather resources, craft, knit warm sweaters, bake pies and meet the locals.',
   },
   {
     title: 'Shelve the Potions!',
     imageUrl: shelvePotionsCardUrl,
-    category: 'Category',
+    category: 'Puzzle',
     price: 'Free',
-    rating: '4.4',
-    likes: '7.1K',
-    description: 'Описание ожидает точного текста из макета.',
+    rating: '4.7',
+    likes: '21.3K',
+    description:
+      "Organize 2000+ potions on shelves after the witch's cats have knocked them over, using clues around an enchanted cellar. Learn strange symbols and decipher cryptic notes.",
   },
   {
     title: 'Heartopia',
     imageUrl: heartopiaCardUrl,
-    category: 'Category',
-    price: 'Free',
-    rating: '—',
-    likes: '—',
-    description: 'Описание ожидает точного текста из макета.',
+    category: 'Strategy',
+    price: '$1.99',
+    rating: '4.6',
+    likes: '46.8K',
+    description:
+      'A multiplayer life simulation game crafted for creativity, freedom, and peace. Build your dream home, explore hobbies, and forge warm connections with friends in a cozy town.',
   },
   {
     title: 'Palia',
     imageUrl: paliaCardUrl,
-    category: 'Category',
+    category: 'Strategy',
     price: 'Free',
-    rating: '—',
-    likes: '—',
-    description: 'Описание ожидает точного текста из макета.',
+    rating: '4.8',
+    likes: '89.5K',
+    description:
+      'A free-to-play fantasy life sim adventure where you can craft, explore, and create the life and home of your dreams in a vibrant, heartwarming world.',
   },
   {
     title: 'Cat Mail Co.',
     imageUrl: catMailCardUrl,
-    category: 'Category',
+    category: 'Puzzle',
     price: 'Free',
-    rating: '—',
-    likes: '—',
-    description: 'Описание ожидает точного текста из макета.',
+    rating: '4.9',
+    likes: '38.2K',
+    description:
+      'Run a cozy cat post office. Sort and deliver parcels from the daily boat. At night, the moon reveals hidden truths about packages. Clear a strange backlog and unlock new destinations.',
   },
 ];
 
-function createRating(rating: string): HTMLDivElement {
+// Раньше лайки сюда не добавляла (см. историю) -- по 68 Hug × 24 Hug из
+// Dev Mode-скрина для десктопной сетки казалось, что влезает только
+// рейтинг. По присланным мокапам tablet/mobile лайки на карточке ЕСТЬ
+// (звезда+рейтинг и сердце+лайки рядом) -- то узкое измерение, видимо,
+// было по другому элементу. Возвращаю лайки, как на скринах.
+function createStat(
+  iconName: 'star' | 'favorite',
+  modifier: string,
+  value: string,
+): HTMLDivElement {
   const wrapper = document.createElement('div');
-  wrapper.className = 'library-results__rating';
+  wrapper.className = `library-results__stat ${modifier}`;
 
   const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined library-results__rating-icon';
+  icon.className = 'material-symbols-outlined library-results__stat-icon';
   icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = 'star';
+  icon.textContent = iconName;
 
-  const value = document.createElement('span');
-  value.className = 'library-results__rating-value';
-  value.textContent = rating;
+  const text = document.createElement('span');
+  text.className = 'library-results__stat-value';
+  text.textContent = value;
 
-  wrapper.append(icon, value);
+  wrapper.append(icon, text);
   return wrapper;
 }
 
@@ -149,9 +159,16 @@ function createCard(game: LibraryGame): HTMLLIElement {
   description.className = 'library-results__description';
   description.textContent = game.description;
 
+  const stats = document.createElement('div');
+  stats.className = 'library-results__stats';
+  stats.append(
+    createStat('star', 'library-results__stat--rating', game.rating),
+    createStat('favorite', 'library-results__stat--likes', game.likes),
+  );
+
   const bottomRow = document.createElement('div');
   bottomRow.className = 'library-results__bottom';
-  bottomRow.append(createRating(game.rating), createDetailsButton());
+  bottomRow.append(stats, createDetailsButton());
 
   content.append(topRow, description, bottomRow);
   card.append(image, content);

@@ -49,12 +49,13 @@
   white-space: nowrap;
   cursor: pointer;
 
-  // Активный чип в Dev Mode залит on-primary (без белой заливки + рамки, как
-  // у остальных) -- текст на тёмной заливке должен быть белым, иначе не видно.
+  // ИСПРАВЛЕНО: активный чип ("All Games") заливается primary (жёлтый
+  // #FFD02B), а не on-primary -- уточнено отдельно. Текст на жёлтой заливке
+  // остаётся тёмным (on-primary), иначе не читается.
   &--active {
     border-color: var(--color-on-primary);
-    background: var(--color-on-primary);
-    color: var(--color-white);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
   }
 }
 

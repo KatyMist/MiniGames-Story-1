@@ -1,22 +1,28 @@
 @use '../../styles/tokens';
 @use '../../styles/utils';
 
-// ЗАМЕЧАНИЕ ПО РАСКЛАДКЕ (не удалять до подтверждения): в задании даны
-// точные размеры карточки только "для декстопа и ноутбука" (828×200,
-// картинка 320×200, текстовая ячейка 508×200). Для мобильного/планшета
-// точных цифр из Figma ещё не было -- ниже временная простая раскладка
-// (колонка на всю ширину), только чтобы секция не была пустой/сломанной
-// до этих брейкпоинтов. Как только пришлёшь Dev Mode для mobile/tablet --
-// заменю.
+// РАСКЛАДКА КАРТОЧКИ: по присланным скринам (tablet/mobile) карточка НЕ
+// становится "картинка сверху, текст снизу" на узких экранах -- она везде
+// остаётся строкой (картинка слева, текст справа), просто гибко сжимается
+// по ширине. Поэтому .library-results__card/__image ниже -- row-раскладка
+// на всех брейкпоинтах; на 'laptop' и шире только "включаются" точные
+// пиксельные размеры из Dev Mode (828×200 / 320×200 / 508×200), а до этого
+// пропорция картинки (320:200 = 8:5) держится через aspect-ratio, и высота
+// карточки не фиксирована -- подстраивается под контент (на узких экранах
+// текста/переносов больше, чем в 200px). Точных Dev Mode-чисел для
+// mobile/tablet пока не было -- сама раскладка (гибкая, не заменяется на
+// колонку) подтверждена скринами, но конкретные px (ширина картинки в %,
+// паддинги, шрифты) -- предположение по скринам, не Dev Mode. Как пришлёшь
+// точные цифры -- поправлю (сама писала "в дальнейшем адаптив").
 //
-// Почему сетка ниже НЕ переключается на 2 колонки жёстко по брейкпоинту
-// 'laptop'/'desktop', а через flex-wrap: доступная ширина контента при
+// Почему сетка на laptop/desktop НЕ переключается на 2 колонки жёстко по
+// брейкпоинту, а через flex-wrap: доступная ширина контента при
 // padding-inline: size-15 (120px) с каждой стороны --
 // 1440 - 240 = 1200px (помещается только ОДНА карточка 828px),
 // 1920 - 240 = 1680px (помещается ДВЕ карточки 828px + gap 24px = 1680px --
 // совпадает ровно). Т.е. при буквальных 828px карточки 2 колонки
 // физически возможны только от ~1704px и шире. Flex-wrap подстраивается
-// сам под то, что реально влезает, а не по дстраивается параметр.
+// сам под то, что реально влезает, а не под жёстко прибитый брейк.
 .library-results {
   display: flex;
   flex-direction: column;
@@ -40,14 +46,17 @@
 
 .library-results__card {
   display: flex;
-  flex-direction: column;
+  // Строка на всех брейкпоинтах (см. комментарий выше) -- гибкая ширина
+  // до 'laptop', фиксированная (828px) начиная с него.
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
   overflow: hidden;
   border: 2.5px solid utils.color('on-primary');
   border-radius: utils.radius('lg');
   background: utils.color('white');
 
   @include utils.respond-up('laptop') {
-    flex-direction: row;
     width: 828px;
     height: 200px;
   }
@@ -55,14 +64,19 @@
 
 .library-results__image {
   display: block;
-  width: 100%;
-  height: 160px;
+  // Гибкая ширина, но с фиксированной пропорцией 320:200 (=8:5) -- та же,
+  // что и у Dev Mode-размеров, просто без фиксации в px до 'laptop'.
+  flex: 0 0 38.65%;
+  width: 38.65%;
+  height: auto;
+  aspect-ratio: 8 / 5;
   object-fit: cover;
 
   @include utils.respond-up('laptop') {
     flex: 0 0 320px;
     width: 320px;
     height: 200px;
+    aspect-ratio: auto;
   }
 }
 
@@ -70,8 +84,13 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
+  // justify-content: space-between имеет эффект только когда высота
+  // ячейки зафиксирована (см. .library-results__card -- height: 200px
+  // только от 'laptop'); до этого высота по контенту, gap просто держит
+  // одинаковые отступы между строками.
   justify-content: space-between;
   gap: utils.space('1');
+  min-width: 0;
   padding: utils.space('2');
 
   @include utils.respond-up('laptop') {
@@ -113,17 +132,22 @@
   white-space: nowrap;
 }
 
-// Бейдж категории -- ПОЛНАЏ ЗАГЛУШКА. В Dev Mode был только общий размер
-// строки "Title and Badge Row" (476�9r29, justify-content: space-between),
-// без отдельных цветов/паддингов/радиуса самого бейджа. Нужен отдельный
-// снимок Dev Mode именно по этому элементу.
+// Бейдж категории -- подтверждено отдельным Dev Mode-снимком (Category
+// Badge): 67 Hug × 23 Hug, padding size-05/size-1, border-radius
+// corner-extra-large ('xl', 24px -- при высоте 23px это фактически полная
+// таблетка), border 1.5px on-primary, background 'secondary' (#F0EEFF).
+// Размер шрифта в снимке не был явно указан, но 12px ('xs') подтверждается
+// расчётом: то же слово "Strategy" в чипе фильтра (.library-filters__chip,
+// 16px/base) даёт ширину текста 92 - 2×12(паддинг) = 68px; здесь
+// 67 - 2×8(паддинг size-1) = 51px, а 68 × (12/16) = 51 -- сходится ровно.
 .library-results__badge {
   flex-shrink: 0;
-  padding: 2px utils.space('1');
-  border: 1px solid utils.color('on-primary');
-  border-radius: utils.radius('sm');
+  padding: utils.space('05') utils.space('1');
+  border: 1.5px solid utils.color('on-primary');
+  border-radius: utils.radius('xl');
+  background: utils.color('secondary');
   font-family: var(--font-family-base);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-bold);
   font-size: var(--font-size-xs);
   line-height: 1.4;
   color: utils.color('on-primary');
@@ -155,7 +179,14 @@
   line-height: 1.4; // 140% из Dev Mode
   color: utils.color('on-bg');
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  // По скринам tablet/mobile описание обрезается многоточием на 2 строках
+  // (у́же карточка -- меньше текста в строке). На laptop+ высота ячейки
+  // фиксирована (476×67 из Dev Mode) -- туда помещается 3 строки.
+  -webkit-line-clamp: 2;
+
+  @include utils.respond-up('laptop') {
+    -webkit-line-clamp: 3;
+  }
 }
 
 .library-results__bottom {
@@ -165,22 +196,39 @@
   gap: utils.space('1');
 }
 
-.library-results__rating {
+// Рейтинг + лайки вместе (см. комментарий у createStat в libraryResults.ts
+// про то, почему лайки вернулись после того, как я их сначала убрала).
+.library-results__stats {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: utils.space('2');
+  min-width: 0;
+}
+
+.library-results__stat {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   gap: utils.space('05');
 }
 
-.library-results__rating-icon {
+.library-results__stat-icon {
   width: 24px;
   height: 24px;
   font-size: 24px;
-  color: utils.color('primary');
   font-variation-settings: 'FILL' 1;
 }
 
-.library-results__rating-value {
+.library-results__stat--rating .library-results__stat-icon {
+  color: utils.color('primary');
+}
+
+.library-results__stat--likes .library-results__stat-icon {
+  color: utils.color('like');
+}
+
+.library-results__stat-value {
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-base);
