@@ -1,0 +1,203 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+// Толщина рамки таблицы — по аналогии с карточками New Games ($card-border-width
+// там же, 2.5px): в макете не удалось снять точное значение через Dev Mode,
+// на скриншоте рамка выглядит той же толщины.
+$table-border-width: 2.5px;
+
+.leaderboard {
+  padding: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    padding-block: utils.space('3');
+    padding-inline: utils.space('5');
+  }
+
+  @include utils.respond-up('desktop') {
+    padding-block: utils.space('5');
+    padding-inline: utils.space('15');
+  }
+}
+
+// Заголовок секции — тот же паттерн (жёлтый Accent Bar + h2), что и у
+// "New Games" (см. .new-games__header в new-games.scss).
+.leaderboard__header {
+  display: flex;
+  align-items: center;
+  gap: utils.space('1');
+  margin-bottom: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    margin-bottom: utils.space('3');
+  }
+}
+
+.leaderboard__accent {
+  flex-shrink: 0;
+  width: utils.space('1');
+  height: utils.space('4');
+  border: 1.5px solid utils.color('on-primary');
+  border-radius: utils.radius('sm');
+  background-color: utils.color('primary');
+}
+
+.leaderboard__title {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  color: utils.color('on-primary');
+}
+
+// Горизонтальный скролл на узких экранах — таблица с 6 колонками не сжимается
+// до нечитаемого состояния, а скроллится внутри своей рамки (в Figma нет
+// отдельного мобильного макета для этой таблицы).
+.leaderboard__table-wrapper {
+  overflow-x: auto;
+  border: $table-border-width solid utils.color('on-primary');
+  border-radius: utils.radius('card-md');
+  background-color: utils.color('white');
+  // "Жёсткая" тень только справа и снизу — как у карточек (см.
+  // utils.shadow('hard-sm') и .new-games__card) — по просьбе заказчика:
+  // у таблицы тень есть, у картинки/карточки "Are You a Game Developer?"
+  // ниже — нет.
+  box-shadow: utils.shadow('hard-sm');
+
+  @include utils.respond-up('tablet') {
+    border-radius: utils.radius('lg');
+    box-shadow: utils.shadow('hard-md');
+  }
+
+  @include utils.respond-up('desktop') {
+    border-radius: utils.radius('xl');
+    box-shadow: utils.shadow('hard');
+  }
+}
+
+.leaderboard__table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.leaderboard__heading {
+  padding: utils.space('2') utils.space('2');
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: utils.color('white');
+  background-color: utils.color('indigo');
+  white-space: nowrap;
+
+  &--left {
+    text-align: left;
+  }
+
+  &--center {
+    text-align: center;
+  }
+}
+
+.leaderboard__row {
+  // Чередующийся фон строк (Figma: Table Row -> Fill bg / white).
+  &:nth-child(odd) {
+    background-color: utils.color('bg');
+  }
+
+  &:nth-child(even) {
+    background-color: utils.color('white');
+  }
+}
+
+.leaderboard__cell {
+  padding: utils.space('2');
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: utils.color('on-primary');
+  white-space: nowrap;
+
+  &--left {
+    text-align: left;
+  }
+
+  &--center {
+    text-align: center;
+  }
+}
+
+.leaderboard__rank {
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-bg');
+
+  // Первое место выделено акцентным жёлтым (Figma: Rank #1 -> Fill primary).
+  &--top {
+    color: utils.color('primary');
+  }
+}
+
+.leaderboard__name {
+  margin-left: utils.space('1');
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+}
+
+.leaderboard__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('5');
+  height: utils.space('5');
+  border: 1.5px solid utils.color('on-primary');
+  border-radius: utils.radius('pill');
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+
+  // Цвета аватаров игроков (Figma: Player Avatar -> Fill) — по одному на
+  // строку, см. комментарий у палитры в tokens/_colors.scss про точность.
+  &--primary {
+    background-color: utils.color('primary');
+  }
+
+  &--mint {
+    background-color: utils.color('mint');
+  }
+
+  &--sky {
+    background-color: utils.color('sky');
+  }
+
+  &--pink {
+    background-color: utils.color('pink');
+  }
+
+  &--lavender {
+    background-color: utils.color('lavender');
+  }
+}
+
+.leaderboard__streak {
+  display: inline-flex;
+  align-items: center;
+  gap: utils.space('05');
+  font-weight: var(--font-weight-bold);
+}
+
+.leaderboard__streak-icon {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.leaderboard__badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid utils.color('on-primary');
+  border-radius: utils.radius('pill');
+  padding: utils.space('05') utils.space('2');
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  white-space: nowrap;
+}

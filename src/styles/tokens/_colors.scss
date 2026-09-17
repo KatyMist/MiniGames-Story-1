@@ -6,4 +6,15 @@ $colors: (
   'primary': #ffd02b,
   'on-primary': #242145,
   'on-bg': #5f5d75,
+  // Ниже — цвета из макета Figma (Top Players This Week -> Table Header,
+  // Player Avatar). Сняты приблизительно со скриншота макета (не через
+  // Dev Mode/Properties, как остальная палитра выше) — экран регулярно
+  // немного искажает цвет при экспорте (например, эталонный жёлтый accent
+  // bar на том же скриншоте считывается как #f8d252 вместо реального
+  // #ffd02b), поэтому точные hex ещё нужно сверить в Figma и поправить.
+  'indigo': #382eb8,
+  'mint': #b0e0ca,
+  'sky': #c4e2fc,
+  'pink': #f6c8fb,
+  'lavender': #e6dff3,
 );
