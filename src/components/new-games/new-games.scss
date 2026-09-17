@@ -5,26 +5,18 @@
   display: flex;
   flex-direction: column;
   gap: utils.space('2');
-  padding-inline: utils.space('2');
-  padding-block-start: utils.space('2');
-  // Отступ снизу больше, чем сверху: секция ниже (Top Players This Week)
-  // держит свой обычный верхний паддинг, и вместе они дают заметный зазор
-  // между секциями, как в макете, — вместо прежних 32/48/80px, когда
-  // карточки New Games (с их тенью) визуально утыкались в следующую секцию.
-  padding-block-end: utils.space('5');
+  padding: utils.space('2');
 
   @include utils.respond-up('tablet') {
     gap: utils.space('3');
+    padding-block: utils.space('3');
     padding-inline: utils.space('5');
-    padding-block-start: utils.space('3');
-    padding-block-end: utils.space('7');
   }
 
-  @include utils.respond-up('desktop') {
+  @media (min-width: 1440px) {
     gap: utils.space('5');
+    padding-block: utils.space('5');
     padding-inline: utils.space('15');
-    padding-block-start: utils.space('5');
-    padding-block-end: utils.space('10');
   }
 }
 
