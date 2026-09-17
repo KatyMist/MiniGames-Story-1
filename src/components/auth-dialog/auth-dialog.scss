@@ -1,0 +1,238 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+// ВНИМАНИЕ: макет был прислан скриншотом, без панели Properties/Dev Mode,
+// поэтому максимальная ширина карточки и внутренние пропорции — по глазу
+// с картинки, не измеренные числа. Остальное — уже подтверждённые в
+// проекте токены: фон 'bg', рамка/текст 'on-primary', акцент 'primary',
+// тень 'hard' (8px 8px 0 0 -- Dev Mode подтверждён отдельно для
+// Hero-блока), радиус 'xl'. Если пришлёшь точные размеры — поправлю.
+
+.auth-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: utils.space('2');
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.auth-dialog--open {
+  visibility: visible;
+  pointer-events: auto;
+
+  .auth-dialog__backdrop {
+    opacity: 1;
+  }
+
+  .auth-dialog__panel {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.auth-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 60%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.auth-dialog__panel {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 460px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: utils.space('4');
+  border-radius: utils.radius('xl');
+  background: utils.color('bg');
+  box-shadow: utils.shadow('hard');
+  transform: scale(0.96);
+  opacity: 0;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.auth-dialog__tabs {
+  display: flex;
+  overflow: hidden;
+  margin-bottom: utils.space('3');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('lg');
+}
+
+.auth-dialog__tab {
+  flex: 1;
+  padding: utils.space('1') utils.space('2');
+  border: none;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  background: transparent;
+  cursor: pointer;
+}
+
+.auth-dialog__tab--active {
+  background: utils.color('on-primary');
+  color: utils.color('white');
+}
+
+.auth-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('2');
+}
+
+.auth-dialog__heading {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+}
+
+.auth-dialog__subtitle {
+  margin: 0 0 utils.space('1');
+  font-size: var(--font-size-sm);
+  color: utils.color('on-bg');
+}
+
+.auth-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('05');
+}
+
+.auth-dialog__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+}
+
+.auth-dialog__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-dialog__input-icon {
+  position: absolute;
+  left: utils.space('2');
+  font-size: 20px;
+  color: utils.color('on-bg');
+  pointer-events: none;
+}
+
+.auth-dialog__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: utils.space('1') utils.space('2') utils.space('1') utils.space('6');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  color: utils.color('on-primary');
+  background: utils.color('white');
+
+  &::placeholder {
+    color: utils.color('on-bg');
+  }
+
+  &:focus-visible {
+    outline: var(--border-width-default) solid utils.color('primary');
+    outline-offset: 2px;
+  }
+}
+
+.auth-dialog__input--with-toggle {
+  padding-right: utils.space('6');
+}
+
+.auth-dialog__input-toggle {
+  position: absolute;
+  right: utils.space('2');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: utils.color('on-bg');
+  cursor: pointer;
+}
+
+.auth-dialog__forgot {
+  align-self: flex-end;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+// Тень на кнопках Login/Create Account -- по образцу уже принятой в
+// проекте "жёсткой" тени без блюра (см. library-results/leaderboard).
+.auth-dialog__submit {
+  width: 100%;
+  box-shadow: utils.shadow('hard-sm');
+}
+
+.auth-dialog__divider {
+  display: flex;
+  align-items: center;
+  gap: utils.space('2');
+  margin: utils.space('1') 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-bg');
+}
+
+.auth-dialog__divider-line {
+  flex: 1;
+  height: 1px;
+  background: utils.color('outline-variant');
+}
+
+.auth-dialog__google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: utils.space('1');
+  width: 100%;
+}
+
+.auth-dialog__google-icon {
+  display: flex;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.auth-dialog__switch {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: utils.color('on-bg');
+}
+
+.auth-dialog__switch-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  text-decoration: underline;
+  cursor: pointer;
+}
