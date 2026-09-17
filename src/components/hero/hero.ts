@@ -12,7 +12,7 @@ function createCta(): HTMLButtonElement {
 export function createHero(): HTMLElement {
   const hero = document.createElement('section');
   hero.className = 'hero';
-  hero.setAttribute('aria-label', 'Приветствие');
+  hero.setAttribute('aria-label', 'Welcome');
 
   const inner = document.createElement('div');
   inner.className = 'hero__inner';
