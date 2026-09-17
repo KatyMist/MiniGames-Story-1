@@ -199,7 +199,7 @@ function createPagination(): HTMLDivElement {
   const pagination = document.createElement('div');
   pagination.className = 'library-results__pagination';
 
-  const prev = createPageButton('Предыдущая страница', 'arrow_back');
+  const prev = createPageButton('Previous page', 'arrow_back');
   prev.classList.add('library-results__page--nav');
   prev.disabled = true;
 
@@ -210,7 +210,7 @@ function createPagination(): HTMLDivElement {
   const page3 = createPageButton('3');
   const page4 = createPageButton('4');
 
-  const next = createPageButton('Следующая страница', 'arrow_forward');
+  const next = createPageButton('Next page', 'arrow_forward');
   next.classList.add('library-results__page--nav');
 
   pagination.append(prev, page1, page2, page3, page4, next);
@@ -220,7 +220,7 @@ function createPagination(): HTMLDivElement {
 export function createLibraryResults(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'library-results';
-  section.setAttribute('aria-label', 'Результаты поиска игр');
+  section.setAttribute('aria-label', 'Game search results');
 
   const grid = document.createElement('ul');
   grid.className = 'library-results__grid';

@@ -17,6 +17,7 @@ function createCategoryChip(label: string, isActive: boolean): HTMLButtonElement
   if (isActive) {
     chip.classList.add('library-filters__chip--active');
   }
+  chip.setAttribute('aria-pressed', String(isActive));
   chip.textContent = label;
 
   return chip;
