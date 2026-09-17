@@ -1,0 +1,145 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+// ВНИМАНИЕ: по этому разделу были только 2 скрина общего вида мокапа (без
+// панели Properties/Dev Mode), поэтому ряд значений ниже — разумное
+// приближение по существующим токенам проекта, а не подтверждённые числа.
+// Отдельно помечено, что именно не подтверждено:
+// 1) фон панели — беру уже подтверждённый в проекте тёмно-синий токен
+//    'bg-footer-low' (#2A264F, снят в Dev Mode для активной страницы
+//    пагинации Library) как ближайший к тёмно-синему из мокапа;
+// 2) сторона появления (справа) и ширина панели (320px / 85vw) — на
+//    скринах не было видно контекста относительно краёв экрана;
+// Если что-то из этого не совпадает с макетом — пришли точные цифры/hex,
+// поправлю.
+$menu-bg: utils.color('bg-footer-low');
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  visibility: hidden;
+  pointer-events: none;
+
+  @include utils.respond-up('tablet') {
+    display: none;
+  }
+}
+
+.mobile-menu--open {
+  visibility: visible;
+  pointer-events: auto;
+
+  .mobile-menu__backdrop {
+    opacity: 1;
+  }
+
+  .mobile-menu__panel {
+    transform: translateX(0);
+  }
+}
+
+.mobile-menu__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-menu__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('5');
+  box-sizing: border-box;
+  width: min(320px, 85vw);
+  height: 100%;
+  padding: utils.space('2');
+  background: $menu-bg;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+}
+
+.mobile-menu__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-menu__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: utils.space('1');
+}
+
+.mobile-menu__logo-icon {
+  display: block;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: utils.space('4');
+  height: utils.space('4');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  background-color: utils.color('white');
+}
+
+.mobile-menu__logo-text {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: utils.color('white');
+}
+
+.mobile-menu__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('4');
+  height: utils.space('4');
+  border: none;
+  border-radius: utils.radius('md');
+  background: transparent;
+  padding: 0;
+  color: utils.color('white');
+
+  .material-symbols-outlined {
+    font-size: 24px;
+  }
+}
+
+.mobile-menu__links {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('4');
+}
+
+.mobile-menu__link {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('white');
+
+  &:hover,
+  &:focus-visible {
+    color: utils.color('primary');
+  }
+}
+
+.mobile-menu__link--active {
+  color: utils.color('primary');
+}
+
+.mobile-menu__actions {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('2');
+  margin-top: auto;
+
+  .btn {
+    width: 100%;
+  }
+}

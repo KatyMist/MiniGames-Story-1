@@ -1,5 +1,6 @@
 import './header.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
+import { createMobileMenu } from '../mobile-menu/mobileMenu';
 
 interface NavLink {
   label: string;
@@ -102,9 +103,23 @@ export function createHeader(): HTMLElement {
 
   const inner = document.createElement('div');
   inner.className = 'header__inner';
-  inner.append(createLogo(), createNav(), createBurgerButton());
 
-  header.append(inner);
+  const burger = createBurgerButton();
+
+  // Меню может закрыться не только кликом по бургеру (бэкдроп/Escape/клик
+  // по ссылке/ресайз до планшета) -- onStateChange держит aria-состояние
+  // бургера в актуальном виде при любом способе закрытия.
+  const menu = createMobileMenu(NAV_LINKS, (isOpen) => {
+    burger.setAttribute('aria-expanded', String(isOpen));
+    burger.setAttribute('aria-label', isOpen ? 'Закрыть меню' : 'Открыть меню');
+  });
+
+  burger.addEventListener('click', () => {
+    menu.toggle();
+  });
+
+  inner.append(createLogo(), createNav(), burger);
+  header.append(inner, menu.element);
 
   return header;
 }
