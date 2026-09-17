@@ -35,3 +35,19 @@ button {
   font-family: inherit;
   cursor: pointer;
 }
+
+// Иконочный шрифт Material Symbols (Figma: шрифт "Google Symbols" на
+// иконках-лигатурах вроде arrow_back/arrow_forward).
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
