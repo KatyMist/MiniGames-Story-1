@@ -1,6 +1,7 @@
 import './header.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
 import { createMobileMenu } from '../mobile-menu/mobileMenu';
+import { createAuthDialog, type AuthMode } from '../auth-dialog/authDialog';
 import { CURRENT_USER } from '../../shared/authState';
 
 interface NavLink {
@@ -19,7 +20,7 @@ function createLogo(): HTMLAnchorElement {
   const logo = document.createElement('a');
   logo.className = 'header__logo';
   logo.href = '/';
-  logo.setAttribute('aria-label', 'MiniGames — на главную');
+  logo.setAttribute('aria-label', 'MiniGames — home');
 
   const icon = document.createElement('img');
   icon.className = 'header__logo-icon';
@@ -82,8 +83,10 @@ function createUserBadge(): HTMLDivElement {
 
 // Полный блок действий -- только для laptop+ (см. header.scss), где виден
 // весь инлайн-навбар. Гость видит Log In + Sign Up, авторизованный -- имя
-// с аватаром и Log Out (по присланному референсу навбара).
-function createDesktopActions(): HTMLDivElement {
+// с аватаром и Log Out (по присланному референсу навбара). Log In/Sign Up
+// открывают диалог авторизации (openAuth), Log Out пока никак не обработан
+// -- при CURRENT_USER.isLoggedIn=false он и не рендерится (см. authState.ts).
+function createDesktopActions(openAuth: (mode: AuthMode) => void): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'header__actions';
 
@@ -96,11 +99,13 @@ function createDesktopActions(): HTMLDivElement {
   logIn.type = 'button';
   logIn.className = 'btn btn--outline';
   logIn.textContent = 'Log In';
+  logIn.addEventListener('click', () => openAuth('login'));
 
   const signUp = document.createElement('button');
   signUp.type = 'button';
   signUp.className = 'btn btn--primary';
   signUp.textContent = 'Sign Up';
+  signUp.addEventListener('click', () => openAuth('register'));
 
   actions.append(logIn, signUp);
 
@@ -111,7 +116,7 @@ function createDesktopActions(): HTMLDivElement {
 // кнопка -- по референсу навбара, Log In там вообще не показывается
 // (только Sign Up у гостя / Log Out у авторизованного), полный список
 // доступен через бургер-меню.
-function createTabletCta(): HTMLDivElement {
+function createTabletCta(openAuth: (mode: AuthMode) => void): HTMLDivElement {
   const cta = document.createElement('div');
   cta.className = 'header__cta';
 
@@ -124,25 +129,29 @@ function createTabletCta(): HTMLDivElement {
   signUp.type = 'button';
   signUp.className = 'btn btn--primary';
   signUp.textContent = 'Sign Up';
+  signUp.addEventListener('click', () => openAuth('register'));
 
   cta.append(signUp);
 
   return cta;
 }
 
-function createNav(): HTMLElement {
+function createNav(openAuth: (mode: AuthMode) => void): HTMLElement {
   const nav = document.createElement('nav');
   nav.className = 'header__nav';
-  nav.setAttribute('aria-label', 'Основная навигация');
-  nav.append(createNavLinks(), createDesktopActions());
+  nav.setAttribute('aria-label', 'Main navigation');
+  nav.append(createNavLinks(), createDesktopActions(openAuth));
 
   return nav;
 }
 
-function createMobileControls(burger: HTMLButtonElement): HTMLDivElement {
+function createMobileControls(
+  burger: HTMLButtonElement,
+  openAuth: (mode: AuthMode) => void,
+): HTMLDivElement {
   const controls = document.createElement('div');
   controls.className = 'header__mobile-controls';
-  controls.append(createTabletCta(), burger);
+  controls.append(createTabletCta(openAuth), burger);
 
   return controls;
 }
@@ -151,7 +160,7 @@ function createBurgerButton(): HTMLButtonElement {
   const burger = document.createElement('button');
   burger.type = 'button';
   burger.className = 'header__burger';
-  burger.setAttribute('aria-label', 'Открыть меню');
+  burger.setAttribute('aria-label', 'Open menu');
   burger.setAttribute('aria-expanded', 'false');
 
   for (let i = 0; i < 3; i += 1) {
@@ -172,20 +181,31 @@ export function createHeader(): HTMLElement {
 
   const burger = createBurgerButton();
 
+  const authDialog = createAuthDialog();
+
   // Меню может закрыться не только кликом по бургеру (бэкдроп/Escape/клик
-  // по ссылке/ресайз до планшета) -- onStateChange держит aria-состояние
-  // бургера в актуальном виде при любом способе закрытия.
-  const menu = createMobileMenu(NAV_LINKS, (isOpen) => {
-    burger.setAttribute('aria-expanded', String(isOpen));
-    burger.setAttribute('aria-label', isOpen ? 'Закрыть меню' : 'Открыть меню');
-  });
+  // по ссылке/ресайз до laptop) -- onStateChange держит aria-состояние
+  // бургера в актуальном виде при любом способе закрытия. Log In/Sign Up
+  // внутри самого меню закрывают его и открывают диалог авторизации.
+  const menu = createMobileMenu(
+    NAV_LINKS,
+    (isOpen) => {
+      burger.setAttribute('aria-expanded', String(isOpen));
+      burger.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+    },
+    (mode) => authDialog.open(mode),
+  );
 
   burger.addEventListener('click', () => {
     menu.toggle();
   });
 
-  inner.append(createLogo(), createNav(), createMobileControls(burger));
-  header.append(inner, menu.element);
+  inner.append(
+    createLogo(),
+    createNav(authDialog.open),
+    createMobileControls(burger, authDialog.open),
+  );
+  header.append(inner, menu.element, authDialog.element);
 
   return header;
 }

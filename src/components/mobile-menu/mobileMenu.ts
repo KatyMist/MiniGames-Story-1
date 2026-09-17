@@ -1,5 +1,6 @@
 import './mobile-menu.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
+import type { AuthMode } from '../auth-dialog/authDialog';
 import { CURRENT_USER } from '../../shared/authState';
 
 interface MobileMenuLink {
@@ -36,7 +37,7 @@ function createCloseButton(onClose: () => void): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'mobile-menu__close';
-  button.setAttribute('aria-label', 'Закрыть меню');
+  button.setAttribute('aria-label', 'Close menu');
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined';
@@ -74,6 +75,7 @@ function createNavLinks(
 
     if (!isPlaceholder && linkRoute === currentRoute) {
       link.classList.add('mobile-menu__link--active');
+      link.setAttribute('aria-current', 'page');
     }
 
     link.addEventListener('click', onNavigate);
@@ -84,7 +86,13 @@ function createNavLinks(
   return list;
 }
 
-function createActions(): HTMLDivElement {
+// Log In/Sign Up закрывают меню и открывают диалог авторизации (тот же,
+// что и из шапки -- см. header.ts). Log Out пока никак не обработан -- при
+// CURRENT_USER.isLoggedIn=false он и не рендерится (см. authState.ts).
+function createActions(
+  onClose: () => void,
+  onAuthRequest?: (mode: AuthMode) => void,
+): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'mobile-menu__actions';
 
@@ -99,11 +107,19 @@ function createActions(): HTMLDivElement {
     logIn.type = 'button';
     logIn.className = 'btn btn--outline-light';
     logIn.textContent = 'Log In';
+    logIn.addEventListener('click', () => {
+      onClose();
+      onAuthRequest?.('login');
+    });
 
     const signUp = document.createElement('button');
     signUp.type = 'button';
     signUp.className = 'btn btn--primary';
     signUp.textContent = 'Sign Up';
+    signUp.addEventListener('click', () => {
+      onClose();
+      onAuthRequest?.('register');
+    });
 
     actions.append(logIn, signUp);
   }
@@ -114,6 +130,7 @@ function createActions(): HTMLDivElement {
 export function createMobileMenu(
   links: readonly MobileMenuLink[],
   onStateChange?: (isOpen: boolean) => void,
+  onAuthRequest?: (mode: AuthMode) => void,
 ): MobileMenuHandle {
   const root = document.createElement('div');
   root.className = 'mobile-menu';
@@ -125,7 +142,7 @@ export function createMobileMenu(
   panel.className = 'mobile-menu__panel';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'true');
-  panel.setAttribute('aria-label', 'Мобильное меню');
+  panel.setAttribute('aria-label', 'Mobile menu');
 
   let isOpen = false;
 
@@ -162,7 +179,7 @@ export function createMobileMenu(
   top.className = 'mobile-menu__top';
   top.append(createLogo(), createCloseButton(close));
 
-  panel.append(top, createNavLinks(links, close), createActions());
+  panel.append(top, createNavLinks(links, close), createActions(close, onAuthRequest));
   root.append(backdrop, panel);
 
   backdrop.addEventListener('click', close);
