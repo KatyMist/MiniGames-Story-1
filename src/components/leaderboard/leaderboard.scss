@@ -14,7 +14,7 @@ $table-border-width: 2.5px;
     padding-inline: utils.space('5');
   }
 
-  @include utils.respond-up('desktop') {
+  @media (min-width: 1440px) {
     padding-block: utils.space('5');
     padding-inline: utils.space('15');
   }
@@ -58,10 +58,6 @@ $table-border-width: 2.5px;
   border: $table-border-width solid utils.color('on-primary');
   border-radius: utils.radius('card-md');
   background-color: utils.color('white');
-  // "Жёсткая" тень только справа и снизу — как у карточек (см.
-  // utils.shadow('hard-sm') и .new-games__card) — по просьбе заказчика:
-  // у таблицы тень есть, у картинки/карточки "Are You a Game Developer?"
-  // ниже — нет.
   box-shadow: utils.shadow('hard-sm');
 
   @include utils.respond-up('tablet') {
@@ -69,7 +65,7 @@ $table-border-width: 2.5px;
     box-shadow: utils.shadow('hard-md');
   }
 
-  @include utils.respond-up('desktop') {
+  @media (min-width: 1440px) {
     border-radius: utils.radius('xl');
     box-shadow: utils.shadow('hard');
   }
