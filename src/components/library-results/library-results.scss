@@ -286,11 +286,13 @@
   gap: utils.space('05');
 }
 
+// ИСПРАВЛЕНО: было 'FILL' 1 (сплошная заливка иконок) -- по референсу
+// звезда и сердце должны быть контурными (пустыми внутри), это 'FILL' 0.
 .library-results__stat-icon {
   width: 24px;
   height: 24px;
   font-size: 24px;
-  font-variation-settings: 'FILL' 1;
+  font-variation-settings: 'FILL' 0;
 }
 
 .library-results__stat--rating .library-results__stat-icon {
