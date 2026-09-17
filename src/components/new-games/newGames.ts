@@ -169,7 +169,7 @@ function createArrowButton(direction: 'prev' | 'next'): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = `new-games__arrow new-games__arrow--${direction}`;
-  button.setAttribute('aria-label', direction === 'prev' ? 'Предыдущая игра' : 'Следующая игра');
+  button.setAttribute('aria-label', direction === 'prev' ? 'Previous game' : 'Next game');
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined new-games__arrow-icon';
@@ -183,7 +183,7 @@ function createArrowButton(direction: 'prev' | 'next'): HTMLButtonElement {
 export function createNewGames(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'new-games';
-  section.setAttribute('aria-label', 'Новые игры');
+  section.setAttribute('aria-label', 'New games');
 
   const headerRow = document.createElement('div');
   headerRow.className = 'new-games__header';
