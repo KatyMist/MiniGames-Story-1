@@ -37,7 +37,16 @@ function createSort(): HTMLButtonElement {
   const sort = document.createElement('button');
   sort.type = 'button';
   sort.className = 'library-filters__sort';
-  sort.textContent = 'Sort by: Rating ↓';
+
+  const label = document.createElement('span');
+  label.textContent = 'Sort by: Rating';
+
+  const icon = document.createElement('span');
+  icon.className = 'material-symbols-outlined library-filters__sort-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = 'arrow_downward';
+
+  sort.append(label, icon);
 
   return sort;
 }

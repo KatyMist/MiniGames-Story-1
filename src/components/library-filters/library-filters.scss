@@ -40,15 +40,21 @@
   background: var(--color-white);
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-sm);
+  // Dev Mode: font-size label-large -- в проекте такого именованного токена
+  // пока нет, по итоговой ширине чипов ("Strategy" 92px и т.д.) это 'base' (16px).
+  font-size: var(--font-size-base);
   line-height: 1;
   letter-spacing: 0;
   color: var(--color-on-primary);
   white-space: nowrap;
   cursor: pointer;
 
+  // Активный чип в Dev Mode залит on-primary (без белой заливки + рамки, как
+  // у остальных) -- текст на тёмной заливке должен быть белым, иначе не видно.
   &--active {
-    background: var(--color-primary);
+    border-color: var(--color-on-primary);
+    background: var(--color-on-primary);
+    color: var(--color-white);
   }
 }
 
@@ -56,16 +62,20 @@
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: utils.space('2');
+  gap: utils.space('1');
   padding: var(--button-padding-block-sm) var(--button-padding-inline-sm);
   border: var(--border-width-default) solid var(--color-on-primary);
   border-radius: utils.radius('xl');
   background: var(--color-white);
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   line-height: 1;
   letter-spacing: 0;
   color: var(--color-on-primary);
   cursor: pointer;
+}
+
+.library-filters__sort-icon {
+  font-size: 18px;
 }
