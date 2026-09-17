@@ -40,3 +40,17 @@
   padding: var(--button-padding-block-lg) var(--button-padding-inline-lg);
   font-size: var(--font-size-md);
 }
+
+// Вариант outline для тёмных фонов (мобильное меню и т.п.) -- обычный
+// .btn--outline рассчитан на светлый фон (тёмная рамка/текст 'on-primary',
+// на тёмном фоне был бы невидим), здесь рамка и текст светлые.
+.btn--outline-light {
+  border-color: utils.color('white');
+  color: utils.color('white');
+  background-color: transparent;
+
+  &:hover,
+  &:focus-visible {
+    background-color: rgb(255 255 255 / 10%);
+  }
+}
