@@ -1,0 +1,92 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.library-filters {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: utils.space('4');
+  padding: utils.space('2');
+
+  @include utils.respond-up('laptop') {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    padding-block: utils.space('2');
+    padding-inline: utils.space('15');
+  }
+}
+
+.library-filters__categories {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: utils.space('4');
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.library-filters__chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: var(--button-padding-block-sm) var(--button-padding-inline-sm);
+  border: var(--border-width-default) solid var(--color-on-primary);
+  border-radius: utils.radius('xl');
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  // Dev Mode: font-size label-large -- в проекте такого именованного токена
+  // пока нет, по итоговой ширине чипов ("Strategy" 92px и т.д.) это 'base' (16px).
+  font-size: var(--font-size-base);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--color-on-primary);
+  white-space: nowrap;
+  cursor: pointer;
+
+  // ИСПРАВЛЕНО: активный чип ("All Games") заливается primary (жёлтый
+  // #FFD02B), а не on-primary -- уточнено отдельно. Текст на жёлтой заливке
+  // остаётся тёмным (on-primary), иначе не читается.
+  &--active {
+    border-color: var(--color-on-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+}
+
+// ИСПРАВЛЕНО: на мобилке кнопка сортировки должна тянуться на всю ширину
+// (см. референс) -- align-self: flex-start стоял без media-условия и
+// перебивал align-items: stretch родителя (.library-filters -- колонка на
+// mobile/tablet), из-за чего кнопка сжималась по контенту вместо растяжки.
+// На laptop+ .library-filters становится строкой, там тот же align-self
+// работает уже по вертикали (не растягиваться по высоте строки), поэтому
+// оставляю его, но только с этой точки останова.
+.library-filters__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: utils.space('1');
+  padding: var(--button-padding-block-sm) var(--button-padding-inline-sm);
+  border: var(--border-width-default) solid var(--color-on-primary);
+  border-radius: utils.radius('xl');
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--color-on-primary);
+  cursor: pointer;
+
+  @include utils.respond-up('laptop') {
+    align-self: flex-start;
+  }
+}
+
+.library-filters__sort-icon {
+  font-size: 18px;
+}

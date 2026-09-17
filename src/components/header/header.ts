@@ -8,7 +8,7 @@ interface NavLink {
 
 const NAV_LINKS: readonly NavLink[] = [
   { label: 'Home', href: '#' },
-  { label: 'Library', href: '#' },
+  { label: 'Library', href: '#/library' },
   { label: 'Tournaments', href: '#' },
   { label: 'Community', href: '#' },
 ];
