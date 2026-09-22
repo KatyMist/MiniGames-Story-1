@@ -7,7 +7,7 @@
   gap: utils.space('8');
   padding-block: utils.space('5');
   padding-inline: utils.space('15');
-  background: var(--bg-footer, #1e1b3a);
+  background: utils.color('bg-footer');
 
   @include utils.respond-down('laptop') {
     gap: utils.space('10');
@@ -82,7 +82,7 @@
   font-weight: var(--font-weight-regular);
   font-size: var(--font-size-sm);
   line-height: 1.5;
-  color: #b9b5c9;
+  color: utils.color('on-bg-footer');
 
   @include utils.respond-down('laptop') {
     font-size: var(--font-size-body-small);
@@ -173,7 +173,7 @@
     font-size: var(--font-size-label-medium);
     line-height: 1;
     letter-spacing: 0;
-    color: var(--on-bg-footer, #b9b5c9);
+    color: utils.color('on-bg-footer');
   }
 }
 
@@ -204,7 +204,7 @@
   width: 24px;
   height: 24px;
   border-radius: 12px;
-  background: var(--on-primary, #242145);
+  background: utils.color('on-primary');
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-bold);
   font-size: 10px;
