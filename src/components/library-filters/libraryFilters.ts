@@ -1,16 +1,18 @@
 import './library-filters.scss';
+import { LIBRARY_CATEGORIES } from '../../shared/libraryGames';
 
-const CATEGORIES: readonly string[] = [
-  'All Games',
-  'Puzzle',
-  'Card',
-  'Match',
-  'Farm',
-  'Strategy',
-  'Arcade',
-];
+export interface LibraryFilterState {
+  category: string;
+  sortDescending: boolean;
+}
 
-function createCategoryChip(label: string, isActive: boolean): HTMLButtonElement {
+export type LibraryFilterChangeHandler = (state: Readonly<LibraryFilterState>) => void;
+
+function createCategoryChip(
+  label: string,
+  isActive: boolean,
+  onSelect: (label: string) => void,
+): HTMLButtonElement {
   const chip = document.createElement('button');
   chip.type = 'button';
   chip.className = 'library-filters__chip';
@@ -19,43 +21,66 @@ function createCategoryChip(label: string, isActive: boolean): HTMLButtonElement
   }
   chip.setAttribute('aria-pressed', String(isActive));
   chip.textContent = label;
+  chip.addEventListener('click', () => onSelect(label));
 
   return chip;
 }
 
-function createCategories(): HTMLDivElement {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'library-filters__categories';
+export function createLibraryFilters(onChange: LibraryFilterChangeHandler): HTMLElement {
+  const state: LibraryFilterState = {
+    category: LIBRARY_CATEGORIES[0] ?? 'All Games',
+    sortDescending: true,
+  };
 
-  for (const [index, label] of CATEGORIES.entries()) {
-    wrapper.append(createCategoryChip(label, index === 0));
-  }
-
-  return wrapper;
-}
-
-function createSort(): HTMLButtonElement {
-  const sort = document.createElement('button');
-  sort.type = 'button';
-  sort.className = 'library-filters__sort';
-
-  const label = document.createElement('span');
-  label.textContent = 'Sort by: Rating';
-
-  const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined library-filters__sort-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = 'arrow_downward';
-
-  sort.append(label, icon);
-
-  return sort;
-}
-
-export function createLibraryFilters(): HTMLElement {
   const section = document.createElement('div');
   section.className = 'library-filters';
-  section.append(createCategories(), createSort());
+
+  const categoriesWrapper = document.createElement('div');
+  categoriesWrapper.className = 'library-filters__categories';
+
+  function renderCategories(): void {
+    categoriesWrapper.replaceChildren(
+      ...LIBRARY_CATEGORIES.map((label) =>
+        createCategoryChip(label, label === state.category, (selected) => {
+          if (selected === state.category) {
+            return;
+          }
+          state.category = selected;
+          renderCategories();
+          onChange({ ...state });
+        }),
+      ),
+    );
+  }
+
+  renderCategories();
+
+  const sortButton = document.createElement('button');
+  sortButton.type = 'button';
+  sortButton.className = 'library-filters__sort';
+
+  const sortLabel = document.createElement('span');
+
+  const sortIcon = document.createElement('span');
+  sortIcon.className = 'material-symbols-outlined library-filters__sort-icon';
+  sortIcon.setAttribute('aria-hidden', 'true');
+
+  function renderSort(): void {
+    sortLabel.textContent = state.sortDescending
+      ? 'Sort by: Rating (High to Low)'
+      : 'Sort by: Rating (Low to High)';
+    sortIcon.textContent = state.sortDescending ? 'arrow_downward' : 'arrow_upward';
+  }
+
+  renderSort();
+  sortButton.append(sortLabel, sortIcon);
+  sortButton.addEventListener('click', () => {
+    state.sortDescending = !state.sortDescending;
+    renderSort();
+    onChange({ ...state });
+  });
+
+  section.append(categoriesWrapper, sortButton);
 
   return section;
 }
