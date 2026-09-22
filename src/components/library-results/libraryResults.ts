@@ -67,6 +67,9 @@ function createCard(game: LibraryGame): HTMLLIElement {
 
   const price = document.createElement('span');
   price.className = 'library-results__price';
+  if (game.price === 'Free') {
+    price.classList.add('library-results__price--free');
+  }
   price.textContent = game.price;
 
   topRow.append(titleGroup, price);
