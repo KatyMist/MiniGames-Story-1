@@ -77,6 +77,10 @@
   }
 }
 
+.header__link--active {
+  color: utils.color('primary');
+}
+
 .header__actions {
   display: flex;
   align-items: center;

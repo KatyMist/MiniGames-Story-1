@@ -10,8 +10,8 @@ interface NavLink {
 }
 
 const NAV_LINKS: readonly NavLink[] = [
-  { label: 'Home', href: '#' },
-  { label: 'Library', href: '#' },
+  { label: 'Home', href: '#/' },
+  { label: 'Library', href: '#/library' },
   { label: 'Tournaments', href: '#' },
   { label: 'Community', href: '#' },
 ];
@@ -42,12 +42,23 @@ function createNavLinks(): HTMLUListElement {
   const list = document.createElement('ul');
   list.className = 'header__links';
 
+  const currentRoute = window.location.hash.slice(1) || '/';
+
   for (const { label, href } of NAV_LINKS) {
     const item = document.createElement('li');
     const link = document.createElement('a');
     link.className = 'header__link';
     link.href = href;
     link.textContent = label;
+
+    const isPlaceholder = href === '#';
+    const linkRoute = href.startsWith('#') ? href.slice(1) || '/' : href;
+
+    if (!isPlaceholder && linkRoute === currentRoute) {
+      link.classList.add('header__link--active');
+      link.setAttribute('aria-current', 'page');
+    }
+
     item.append(link);
     list.append(item);
   }
