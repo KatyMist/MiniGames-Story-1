@@ -228,6 +228,13 @@
   // (см. комментарий в src/styles/tokens/_typography.scss) -- 'xl' (24px).
   font-size: var(--font-size-xl);
   line-height: 1.2;
+  // По уточнению: зелёный ('price-free') -- только у "Free", у платной
+  // цены (например "$1.99") текст on-primary (#242145) -- см.
+  // .library-results__price--free ниже.
+  color: utils.color('on-primary');
+}
+
+.library-results__price--free {
   color: utils.color('price-free');
 }
 
@@ -392,4 +399,14 @@
 
 .library-results__page-icon {
   font-size: 20px;
+}
+
+.library-results__empty {
+  margin: 0;
+  padding: utils.space('4') utils.space('2');
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  color: utils.color('on-bg');
+  text-align: center;
 }

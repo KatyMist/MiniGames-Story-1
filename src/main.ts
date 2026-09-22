@@ -5,16 +5,14 @@ import { createNewGames } from './components/new-games/newGames';
 import { createLeaderboard } from './components/leaderboard/leaderboard';
 import { createGameDeveloper } from './components/game-developer/gameDeveloper';
 import { createFooter } from './components/footer/footer';
-import { createLibraryHeader } from './components/library-header/libraryHeader';
-import { createLibraryFilters } from './components/library-filters/libraryFilters';
-import { createLibraryResults } from './components/library-results/libraryResults';
+import { createLibraryPage } from './components/library-page/libraryPage';
 
 function renderHomePage(main: HTMLElement): void {
   main.append(createHero(), createNewGames(), createLeaderboard(), createGameDeveloper());
 }
 
 function renderLibraryPage(main: HTMLElement): void {
-  main.append(createLibraryHeader(), createLibraryFilters(), createLibraryResults());
+  main.append(...createLibraryPage());
 }
 
 function renderApp(root: HTMLElement): void {
