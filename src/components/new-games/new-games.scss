@@ -98,6 +98,9 @@
   margin: 0;
   padding-inline: utils.space('05');
   overflow: hidden;
+  // pan-y -- горизонтальный свайп ловит JS (pointer-события в
+  // newGames.ts), вертикальный скролл страницы пальцем остаётся браузеру.
+  touch-action: pan-y;
 
   @include utils.respond-up('tablet') {
     height: 288px;
@@ -149,6 +152,16 @@ $card-border-width: 2.5px;
   border: $card-border-width solid utils.color('on-primary');
   border-radius: utils.radius('lg');
   background-color: utils.color('white');
+  cursor: pointer;
+  // touch-action: pan-y -- вертикальный скролл страницы пальцем не должен
+  // ломаться свайпом по карусели (горизонтальный свайп/перетаскивание
+  // слайдера обрабатывается вручную через pointer-события в newGames.ts).
+  touch-action: pan-y;
+
+  &:focus-visible {
+    outline: 2px solid utils.color('primary');
+    outline-offset: 2px;
+  }
   // Жёсткая тень без блюра (Figma: Shadows and blurs -> Drop shadow,
   // X: 4, Y: 4, Blur: 0, Spread: 0, цвет on-primary) — тот же цвет,
   // что и у рамки, поэтому тень читается как плотный сплошной контур

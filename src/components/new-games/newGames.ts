@@ -9,6 +9,7 @@ import islandersCardPeekUrl from '../../assets/images/islanders-new-shores-card-
 import vacationCardPeekUrl from '../../assets/images/vacation-cafe-simulator-card-peek.jpg';
 import winterBurrowCardPeekUrl from '../../assets/images/winter-burrow-card-peek.jpg';
 import shelvePotionsCardPeekUrl from '../../assets/images/shelve-the-potions-card-peek.jpg';
+import { createGameDetails } from '../game-details/gameDetails';
 
 interface GameCard {
   title: string;
@@ -89,6 +90,13 @@ const MOBILE_WIDTH_SCALE: readonly number[] = [218, 56];
 // не через чтение layout из DOM.
 const RAIL_GAP_PX = 8;
 
+// Порог свайпа в пикселях -- перетаскивание короче него считается кликом
+// (см. handleCardOpen), длиннее -- сменой слайда.
+const SWIPE_THRESHOLD_PX = 40;
+
+// Автопрокрутка -- по заданию каждые 4 секунды.
+const AUTOPLAY_INTERVAL_MS = 4000;
+
 const WIDTH_SCALE_BY_BREAKPOINT: readonly { query: string; widths: readonly number[] }[] = [
   { query: '(min-width: 1440px)', widths: [816, 288, 120] },
   { query: '(min-width: 768px)', widths: [448, 105] },
@@ -112,9 +120,24 @@ function createIcon(name: 'star' | 'favorite', modifier: string): HTMLSpanElemen
   return icon;
 }
 
-function createCard(game: GameCard): HTMLLIElement {
+function createCard(game: GameCard, onOpen: () => void): HTMLLIElement {
   const card = document.createElement('li');
   card.className = 'new-games__card';
+  // Клик по карточке открывает диалог Game Details (контент там всегда
+  // статичный -- см. Common Game Details Content Requirements в задании,
+  // поэтому конкретная игра карточки на onOpen не влияет). role=button +
+  // tabIndex/keydown -- та же карточка доступна и с клавиатуры (Enter/
+  // Space), не только мышью/тачем.
+  card.setAttribute('role', 'button');
+  card.tabIndex = 0;
+  card.setAttribute('aria-label', `View details for ${game.title}`);
+  card.addEventListener('click', onOpen);
+  card.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onOpen();
+    }
+  });
 
   // Отдельная обёртка с overflow: hidden — картинка обрезается по своим
   // границам гарантированно, а не полагается на border-radius у самого
@@ -215,11 +238,29 @@ export function createNewGames(): HTMLElement {
   const rail = document.createElement('ul');
   rail.className = 'new-games__rail';
 
-  const cards = GAMES.map((game) => createCard(game));
+  // Диалог Game Details -- контент там всегда статичный ("Tukoni: Forest
+  // Keepers", см. Common Game Details Content Requirements в задании),
+  // поэтому один диалог на весь слайдер, а не по одному на карточку.
+  const gameDetails = createGameDetails();
+
+  // dragDistance живёт здесь (а не внутри обработчиков pointer-событий
+  // ниже), чтобы handleCardOpen мог проверить её и НЕ открывать диалог
+  // сразу после свайпа (иначе любой свайп по активной карточке ещё и
+  // открывал бы диалог как "клик").
+  let dragDistance = 0;
+
+  function handleCardOpen(): void {
+    if (Math.abs(dragDistance) > SWIPE_THRESHOLD_PX) {
+      return;
+    }
+    gameDetails.open();
+  }
+
+  const cards = GAMES.map((game) => createCard(game, handleCardOpen));
   rail.append(...cards);
   track.append(rail);
 
-  section.append(headerRow, track);
+  section.append(headerRow, track, gameDetails.element);
 
   // По умолчанию активна первая игра — так показано в макете (карточка
   // стоит вплотную к левому отступу секции, без "призрачного" пикового
@@ -320,20 +361,98 @@ export function createNewGames(): HTMLElement {
     const minTranslateX = Math.min(track.clientWidth - railTotalWidth, 0);
     const translateX = Math.max(minTranslateX, Math.min(0, centeredTranslateX));
     rail.style.transform = `translateX(${translateX}px)`;
+  }
 
-    prevButton.disabled = activeIndex === 0;
-    nextButton.disabled = activeIndex === GAMES.length - 1;
+  // Бесконечная прокрутка в обе стороны: с последней игры "Next" уходит на
+  // первую и наоборот (по модулю длины списка) -- кнопки поэтому больше не
+  // блокируются на краях (см. старую prevButton.disabled/nextButton.disabled
+  // -- убраны). Визуально на самой первой/последней игре пикового соседа с
+  // одной из сторон по-прежнему нет (см. комментарий про minTranslateX выше,
+  // подтверждено Figma) -- бесконечность здесь именно в навигации, а не в
+  // непрерывной ленте без начала/конца.
+  function goToNext(): void {
+    activeIndex = (activeIndex + 1) % GAMES.length;
+    render();
+  }
+
+  function goToPrev(): void {
+    activeIndex = (activeIndex - 1 + GAMES.length) % GAMES.length;
+    render();
+  }
+
+  let autoplayTimer: ReturnType<typeof setInterval> | undefined;
+
+  function stopAutoplay(): void {
+    if (autoplayTimer !== undefined) {
+      clearInterval(autoplayTimer);
+      autoplayTimer = undefined;
+    }
+  }
+
+  function startAutoplay(): void {
+    stopAutoplay();
+    autoplayTimer = setInterval(goToNext, AUTOPLAY_INTERVAL_MS);
   }
 
   prevButton.addEventListener('click', () => {
-    activeIndex = Math.max(0, activeIndex - 1);
-    render();
+    goToPrev();
+    startAutoplay();
   });
 
   nextButton.addEventListener('click', () => {
-    activeIndex = Math.min(GAMES.length - 1, activeIndex + 1);
-    render();
+    goToNext();
+    startAutoplay();
   });
+
+  // Свайп/перетаскивание -- на track (не на отдельных карточках), чтобы
+  // драг стабильно ловился независимо от того, с какой видимой карточки
+  // (активной или "peek") он начался. Pointer Events покрывают и тач, и
+  // мышь одним и тем же кодом. dragDistance (объявлена выше, до карточек)
+  // используется и здесь для определения свайпа, и в handleCardOpen -- чтобы
+  // отличить "просто клик" от "клик как побочный эффект окончания свайпа".
+  let isPointerDown = false;
+  let pointerStartX = 0;
+
+  track.addEventListener('pointerdown', (event) => {
+    isPointerDown = true;
+    pointerStartX = event.clientX;
+    dragDistance = 0;
+    // Пауза на нажатии -- по заданию.
+    stopAutoplay();
+  });
+
+  track.addEventListener('pointermove', (event) => {
+    if (!isPointerDown) {
+      return;
+    }
+    dragDistance = event.clientX - pointerStartX;
+  });
+
+  function finishPointerInteraction(): void {
+    if (!isPointerDown) {
+      return;
+    }
+    isPointerDown = false;
+
+    if (Math.abs(dragDistance) > SWIPE_THRESHOLD_PX) {
+      if (dragDistance < 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+    }
+
+    // Возобновление на отпускании, с чистым (сброшенным) таймером -- по
+    // заданию ("reset-on-swipe-after-press"): startAutoplay() ниже сама
+    // сначала останавливает предыдущий интервал (см. stopAutoplay внутри),
+    // так что таймер в любом случае стартует заново с нуля, а не
+    // продолжает недосчитанный интервал.
+    startAutoplay();
+  }
+
+  track.addEventListener('pointerup', finishPointerInteraction);
+  track.addEventListener('pointercancel', finishPointerInteraction);
+  track.addEventListener('pointerleave', finishPointerInteraction);
 
   // ResizeObserver реагирует и на изменение размера окна (ширина трека
   // меняется вместе с ним), и на сам факт появления трека в layout'е:
@@ -349,6 +468,7 @@ export function createNewGames(): HTMLElement {
   resizeObserver.observe(track);
 
   render();
+  startAutoplay();
 
   return section;
 }
