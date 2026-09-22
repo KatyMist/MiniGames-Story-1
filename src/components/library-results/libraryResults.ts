@@ -27,16 +27,17 @@ function createStat(
   return wrapper;
 }
 
-function createDetailsButton(title: string): HTMLButtonElement {
+function createDetailsButton(title: string, onClick: () => void): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'library-results__details';
   button.textContent = 'Details';
   button.setAttribute('aria-label', `Details for ${title}`);
+  button.addEventListener('click', onClick);
   return button;
 }
 
-function createCard(game: LibraryGame): HTMLLIElement {
+function createCard(game: LibraryGame, onDetailsClick: () => void): HTMLLIElement {
   const card = document.createElement('li');
   card.className = 'library-results__card';
 
@@ -87,7 +88,7 @@ function createCard(game: LibraryGame): HTMLLIElement {
 
   const bottomRow = document.createElement('div');
   bottomRow.className = 'library-results__bottom';
-  bottomRow.append(stats, createDetailsButton(game.title));
+  bottomRow.append(stats, createDetailsButton(game.title, onDetailsClick));
 
   content.append(topRow, description, bottomRow);
   card.append(image, content);
@@ -179,7 +180,10 @@ export interface LibraryResultsController {
   update: (games: readonly LibraryGame[]) => void;
 }
 
-export function createLibraryResults(games: readonly LibraryGame[]): LibraryResultsController {
+export function createLibraryResults(
+  games: readonly LibraryGame[],
+  onDetailsClick: () => void,
+): LibraryResultsController {
   const section = document.createElement('section');
   section.className = 'library-results';
   section.setAttribute('aria-label', 'Game search results');
@@ -207,7 +211,7 @@ export function createLibraryResults(games: readonly LibraryGame[]): LibraryResu
 
     const start = (currentPage - 1) * PAGE_SIZE;
     const pageGames = currentGames.slice(start, start + PAGE_SIZE);
-    grid.append(...pageGames.map((game) => createCard(game)));
+    grid.append(...pageGames.map((game) => createCard(game, onDetailsClick)));
   }
 
   const pagination = createPagination(
