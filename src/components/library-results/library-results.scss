@@ -393,3 +393,13 @@
 .library-results__page-icon {
   font-size: 20px;
 }
+
+.library-results__empty {
+  margin: 0;
+  padding: utils.space('4') utils.space('2');
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  color: utils.color('on-bg');
+  text-align: center;
+}
