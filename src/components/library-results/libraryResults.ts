@@ -56,7 +56,10 @@ function createCard(game: LibraryGame, onDetailsClick: () => void): HTMLLIElemen
   const titleGroup = document.createElement('div');
   titleGroup.className = 'library-results__title-group';
 
-  const title = document.createElement('h3');
+  // h2, не h3 -- на странице библиотеки нет промежуточного h2 (в отличие от
+  // "New Games" на главной), так что после h1 "Game Library" следующий
+  // уровень -- сразу заголовки карточек (без пропуска уровня h1 -> h3).
+  const title = document.createElement('h2');
   title.className = 'library-results__title';
   title.textContent = game.title;
 

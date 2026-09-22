@@ -15,11 +15,24 @@ function renderLibraryPage(main: HTMLElement): void {
   main.append(...createLibraryPage());
 }
 
+// Заголовок вкладки меняется вместе с маршрутом -- без этого document.title
+// оставался бы статичным "MiniGames" и на /library, и на главной, что
+// плохо и для вкладок браузера, и для скринридеров (заголовок документа --
+// первое, что они озвучивают при переходе).
+const DEFAULT_PAGE_TITLE = 'MiniGames';
+
+const PAGE_TITLES: Readonly<Record<string, string>> = {
+  '/': DEFAULT_PAGE_TITLE,
+  '/library': 'Game Library — MiniGames',
+};
+
 function renderApp(root: HTMLElement): void {
   root.replaceChildren();
 
   const main = document.createElement('main');
   const route = window.location.hash.slice(1) || '/';
+
+  document.title = PAGE_TITLES[route] ?? DEFAULT_PAGE_TITLE;
 
   switch (route) {
     case '/library': {
