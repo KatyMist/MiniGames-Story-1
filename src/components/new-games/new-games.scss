@@ -1,0 +1,306 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.new-games {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('2');
+  padding: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    gap: utils.space('3');
+    padding-block: utils.space('3');
+    padding-inline: utils.space('5');
+  }
+
+  @media (min-width: 1440px) {
+    gap: utils.space('5');
+    padding-block: utils.space('5');
+    padding-inline: utils.space('15');
+  }
+}
+
+.new-games__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.new-games__title-group {
+  display: flex;
+  align-items: center;
+  gap: utils.space('1');
+}
+
+// Жёлтый акцент рядом с заголовком секции (Figma: Yellow Accent Bar).
+.new-games__accent {
+  flex-shrink: 0;
+  width: utils.space('1');
+  height: utils.space('4');
+  border: 1.5px solid utils.color('on-primary');
+  border-radius: utils.radius('sm');
+  background-color: utils.color('primary');
+}
+
+.new-games__title {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  color: utils.color('on-primary');
+}
+
+// Стрелки скрыты на мобильном (Figma: home-mobile -> New Games Section не
+// содержит Frame со стрелками, только Section Header + Carousel Track).
+.new-games__arrows {
+  display: none;
+  gap: utils.space('2');
+
+  @include utils.respond-up('tablet') {
+    display: flex;
+  }
+}
+
+.new-games__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('6');
+  height: utils.space('6');
+  padding: 0;
+  border: 2px solid utils.color('on-primary');
+  border-radius: utils.radius('pill');
+  background-color: utils.color('white');
+  transition: opacity 0.2s ease;
+
+  &--next {
+    background-color: utils.color('primary');
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.new-games__arrow-icon {
+  font-size: 24px;
+  color: utils.color('on-primary');
+}
+
+// Трек — неподвижное окно с обрезкой: только его ширина и padding задают
+// видимую область. Сам сдвиг для центрирования активной карточки — на
+// .new-games__rail внутри, иначе у первой/последней игры (нет соседа с
+// одной из сторон) раскладку "уводило" в сторону вместо плавного центрирования.
+.new-games__track {
+  height: 206px;
+  margin: 0;
+  padding-inline: utils.space('05');
+  overflow: hidden;
+  // pan-y -- горизонтальный свайп ловит JS (pointer-события в
+  // newGames.ts), вертикальный скролл страницы пальцем остаётся браузеру.
+  touch-action: pan-y;
+
+  @include utils.respond-up('tablet') {
+    height: 288px;
+    padding-inline: utils.space('1');
+  }
+
+  // 1440px, а не $breakpoints.desktop (1920px): та же причина, что и у
+  // порога в newGames.ts (getActiveWidthScale) — обычный развёрнутый на
+  // весь экран десктопный браузер почти никогда не даёт 1920 логических
+  // пикселей. Высота трека обязана переключаться на "десктопную" ОДНОВРЕМЕННО
+  // с шириной карточек, иначе получается несостыковка: широкие (816px)
+  // карточки в треке, не выросшем до нужной высоты.
+  @media (min-width: 1440px) {
+    height: 388px;
+  }
+}
+
+.new-games__rail {
+  position: relative;
+  display: flex;
+  // flex-start, а не center: у карточки появилась жёсткая тень со
+  // смещением вниз (box-shadow: 4px 4px ...), трек чуть выше карточки
+  // именно на этот запас (см. .new-games__track), и весь этот запас
+  // должен остаться СНИЗУ, а не разделиться поровну сверху/снизу —
+  // иначе тень частично обрезается overflow: hidden у трека.
+  align-items: flex-start;
+  gap: utils.space('1');
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  transition: transform 0.3s ease;
+}
+
+// overflow оставлен видимым: подпись (Overlay) в Figma задана как Hug
+// и на "peek"/"secondary" карточках шире самой карточки — она обрезается
+// только треком (.new-games__track { overflow: hidden }) либо перекрывается
+// соседней карточкой, которая идёт следом в разметке и рисуется поверх.
+// Толщина рамки карточки — совпадает с Border у "Game Card" в Figma
+// (Properties -> Borders: 2.5px, on-primary, Inner alignment). Нужна
+// отдельной переменной, чтобы вычесть её из радиуса картинки ниже.
+$card-border-width: 2.5px;
+
+.new-games__card {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  flex-shrink: 0;
+  height: 200px;
+  border: $card-border-width solid utils.color('on-primary');
+  border-radius: utils.radius('lg');
+  background-color: utils.color('white');
+  cursor: pointer;
+  // touch-action: pan-y -- вертикальный скролл страницы пальцем не должен
+  // ломаться свайпом по карусели (горизонтальный свайп/перетаскивание
+  // слайдера обрабатывается вручную через pointer-события в newGames.ts).
+  touch-action: pan-y;
+
+  &:focus-visible {
+    outline: 2px solid utils.color('primary');
+    outline-offset: 2px;
+  }
+  // Жёсткая тень без блюра (Figma: Shadows and blurs -> Drop shadow,
+  // X: 4, Y: 4, Blur: 0, Spread: 0, цвет on-primary) — тот же цвет,
+  // что и у рамки, поэтому тень читается как плотный сплошной контур
+  // со смещением вправо-вниз, а не мягкое размытие.
+  box-shadow: 4px 4px 0 0 utils.color('on-primary');
+  transition:
+    width 0.3s ease,
+    border-width 0.3s ease,
+    box-shadow 0.3s ease;
+
+  @include utils.respond-up('tablet') {
+    height: 280px;
+  }
+
+  // 1440px — см. комментарий у .new-games__track выше.
+  @media (min-width: 1440px) {
+    height: 384px;
+    border-radius: utils.radius('xl');
+  }
+
+  &--collapsed {
+    border-width: 0;
+    box-shadow: none;
+  }
+
+  // Крайняя ("peek") карточка показывает только картинку без подписи —
+  // в Figma её Overlay шире самой карточки (Hug), поэтому на такой узкой
+  // карточке текст просто скрыт, а не обрезан/перенесён на новую строку.
+  &--peek .new-games__overlay {
+    display: none;
+  }
+}
+
+// Обёртка, которая реально обрезает картинку (overflow: hidden) — жёсткая
+// гарантия, что фото никогда не вылезет за скруглённый угол рамки, в любой
+// момент анимации ширины карточки. Радиус меньше, чем у самой рамки, ровно
+// на её толщину ($card-border-width): картинка лежит ВНУТРИ рамки (inset: 0
+// от border-box), и для визуально концентричных (совпадающих) скруглений
+// внутренний радиус обязан быть меньше внешнего на толщину рамки — иначе на
+// каждом углу остаётся заметный "срез"/шов.
+.new-games__image-clip {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: calc(#{utils.radius('lg')} - #{$card-border-width});
+
+  // 1440px — см. комментарий у .new-games__track выше.
+  @media (min-width: 1440px) {
+    border-radius: calc(#{utils.radius('xl')} - #{$card-border-width});
+  }
+}
+
+.new-games__card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// Градиент для читаемости текста поверх картинки (Figma: Overlay ->
+// Linear Gradient, стопы 0% / 40% / 85%). Ширина строго 100% карточки и
+// overflow: hidden — оверлей никогда не должен быть шире самой карточки
+// (раньше был min-width: 100% без верхней границы, и на узких карточках,
+// когда заголовок не помещался, весь блок "Hug"-ем расширялся ЗА рамку
+// карточки — визуально текст/фон вываливался наружу). Если заголовку не
+// хватает места — он обрезается многоточием (см. .new-games__card-title),
+// а не раздвигает оверлей.
+.new-games__overlay {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('1');
+  width: 100%;
+  overflow: hidden;
+  padding: utils.space('2');
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0%) 0%,
+    rgb(0 0 0 / 40%) 40%,
+    rgb(0 0 0 / 85%) 85%
+  );
+}
+
+.new-games__card-title {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-md);
+  line-height: 1;
+  color: utils.color('white');
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-games__card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: utils.space('1');
+  white-space: nowrap;
+}
+
+.new-games__card-rating,
+.new-games__card-likes {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: utils.space('05');
+}
+
+.new-games__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  font-variation-settings: 'FILL' 0;
+
+  &--star {
+    color: utils.color('primary');
+  }
+
+  &--like {
+    color: utils.color('like');
+  }
+}
+
+.new-games__card-value {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  line-height: 1;
+  color: utils.color('white');
+  text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+}

@@ -1,0 +1,60 @@
+@forward 'colors';
+@forward 'typography';
+@forward 'spacing';
+@forward 'radius';
+@forward 'shadows';
+@forward 'buttons';
+@forward 'breakpoints';
+
+@use 'sass:map';
+@use 'colors';
+@use 'typography';
+@use 'spacing';
+@use 'radius';
+@use 'shadows';
+@use 'buttons';
+
+// Токены публикуются как CSS custom properties, чтобы ими можно было
+// пользоваться в обычном CSS/Sass через var(--...), в т.ч. в calc().
+:root {
+  @each $name, $value in colors.$colors {
+    --color-#{$name}: #{$value};
+  }
+
+  @each $name, $value in spacing.$spacing {
+    --space-#{$name}: #{$value};
+  }
+
+  @each $name, $value in radius.$radius {
+    --radius-#{$name}: #{$value};
+  }
+
+  @each $name, $value in shadows.$shadows {
+    --shadow-#{$name}: #{$value};
+  }
+
+  @each $name, $value in typography.$font-sizes {
+    --font-size-#{$name}: #{$value};
+  }
+
+  @each $name, $value in typography.$font-weights {
+    --font-weight-#{$name}: #{$value};
+  }
+
+  @each $name, $value in buttons.$button-height {
+    --button-height-#{$name}: #{$value};
+  }
+
+  @each $name, $value in buttons.$button-padding-inline {
+    --button-padding-inline-#{$name}: #{$value};
+  }
+
+  @each $name, $value in buttons.$button-padding-block {
+    --button-padding-block-#{$name}: #{$value};
+  }
+
+  --border-width-default: #{buttons.$border-width-default};
+
+  --font-family-base: #{map.get(typography.$font-families, 'base')};
+  --font-family-heading: #{map.get(typography.$font-families, 'heading')};
+}

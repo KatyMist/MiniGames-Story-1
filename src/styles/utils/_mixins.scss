@@ -1,0 +1,28 @@
+@use 'sass:map';
+@use '../tokens/breakpoints' as bp;
+
+// Стили применяются, начиная с указанной точки останова и шире.
+@mixin respond-up($name) {
+  $value: map.get(bp.$breakpoints, $name);
+
+  @if $value == null {
+    @error 'Неизвестная точка останова: #{$name}';
+  }
+
+  @media (min-width: $value) {
+    @content;
+  }
+}
+
+// Стили применяются уже точки останова (мобильный режим).
+@mixin respond-down($name) {
+  $value: map.get(bp.$breakpoints, $name);
+
+  @if $value == null {
+    @error 'Неизвестная точка останова: #{$name}';
+  }
+
+  @media (max-width: $value - 1px) {
+    @content;
+  }
+}

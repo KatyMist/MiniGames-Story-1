@@ -1,0 +1,12 @@
+$shadows: (
+  'sm': 0 1px 2px rgba(0, 0, 0, 0.16),
+  'md': 0 4px 12px rgba(0, 0, 0, 0.24),
+  'lg': 0 12px 32px rgba(0, 0, 0, 0.32),
+  // "Жёсткие" тени без блюра (Figma: Hero Text Box -> Drop shadow).
+  // Значение для desktop сверено в Figma (X8 Y8 Blur0 Spread0, on-primary).
+  // Для mobile/tablet точные X/Y не удалось снять (нестабильный доступ к
+  // файлу), масштабированы пропорционально толщине рамки карточки.
+  'hard-sm': 4px 4px 0 0 var(--color-on-primary),
+  'hard-md': 6px 6px 0 0 var(--color-on-primary),
+  'hard': 8px 8px 0 0 var(--color-on-primary),
+);

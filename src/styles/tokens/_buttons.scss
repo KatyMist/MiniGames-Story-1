@@ -1,0 +1,23 @@
+$button-height: (
+  'sm': 32px,
+  'md': 44px,
+  'lg': 56px,
+);
+
+$button-padding-inline: (
+  'sm': 12px,
+  'md': 20px,
+  // btn-large-x из Figma (сверено через hover-подсказку токена).
+  'lg': 24px,
+);
+
+// Вертикальный паддинг кнопок (сверен с Figma: кнопки в шапке -- 10px,
+// btn-large-y -- 16px).
+$button-padding-block: (
+  'sm': 6px,
+  'md': 10px,
+  'lg': 16px,
+);
+
+// Толщина обводки кнопок/шапки в макете -- везде 2px.
+$border-width-default: 2px;

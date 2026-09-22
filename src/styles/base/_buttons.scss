@@ -1,0 +1,56 @@
+@use '../tokens';
+@use '../utils';
+
+// Общие классы кнопок (используются в шапке, диалоге авторизации и т.д.)
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('md');
+  padding: var(--button-padding-block-md) var(--button-padding-inline-md);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('on-primary');
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.btn--outline {
+  background-color: transparent;
+
+  &:hover,
+  &:focus-visible {
+    background-color: utils.color('bg');
+  }
+}
+
+.btn--primary {
+  background-color: utils.color('primary');
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(0.95);
+  }
+}
+
+// Крупный размер (Figma: Miro Button / btn-large).
+.btn--lg {
+  padding: var(--button-padding-block-lg) var(--button-padding-inline-lg);
+  font-size: var(--font-size-md);
+}
+
+// Вариант outline для тёмных фонов (мобильное меню и т.п.) -- обычный
+// .btn--outline рассчитан на светлый фон (тёмная рамка/текст 'on-primary',
+// на тёмном фоне был бы невидим), здесь рамка и текст светлые.
+.btn--outline-light {
+  border-color: utils.color('white');
+  color: utils.color('white');
+  background-color: transparent;
+
+  &:hover,
+  &:focus-visible {
+    background-color: rgb(255 255 255 / 10%);
+  }
+}
