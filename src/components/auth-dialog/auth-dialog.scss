@@ -236,3 +236,31 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+// Кнопка закрытия диалога -- в правом верхнем углу, внутри отступа панели
+// (не перекрывает вкладки Login/Register).
+.auth-dialog__close {
+  position: absolute;
+  top: utils.space('1');
+  right: utils.space('1');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('3');
+  height: utils.space('3');
+  padding: 0;
+  border: none;
+  border-radius: utils.radius('pill');
+  background: transparent;
+  color: utils.color('on-primary');
+  cursor: pointer;
+
+  .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: utils.color('secondary');
+  }
+}
