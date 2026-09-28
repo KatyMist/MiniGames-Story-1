@@ -3,15 +3,44 @@ import { createLibraryFilters } from '../library-filters/libraryFilters';
 import { createLibraryResults, toLibraryCard } from '../library-results/libraryResults';
 import { createGameDetails } from '../game-details/gameDetails';
 import { showSnackbar } from '../snackbar/snackbar';
-import { fetchGames, isAbortError, type GamesQuery } from '../../shared/api';
+import { getRoute, navigate, subscribe, updateQuery, type RouteState } from '../../app/router';
+import {
+  ApiError,
+  fetchCategories,
+  fetchGames,
+  isAbortError,
+  type Category,
+  type GamesQuery,
+  type SortOption,
+} from '../../shared/api';
 import { formatCategoryLabel } from '../../shared/format';
 
 // Карточек на странице библиотеки -- по заданию (limit=6).
 const PAGE_LIMIT = 6;
+const FALLBACK_CATEGORY = 'all';
+const DEFAULT_SORT: SortOption = 'rating-desc';
+const SORT_OPTIONS: readonly SortOption[] = ['rating-desc', 'rating-asc', 'name-asc', 'name-desc'];
+
+function isSortOption(value: string): value is SortOption {
+  return (SORT_OPTIONS as readonly string[]).includes(value);
+}
+
+// Параметры библиотеки, которые влияют на запрос к API. Смена остальных
+// параметров URL (открытый диалог и т.п.) не должна перезапрашивать список.
+function getListKey(query: URLSearchParams): string {
+  return ['category', 'sort'].map((key) => query.get(key) ?? '').join('|');
+}
+
+// "Reset filters" на баннере Data Not Found -- библиотека без параметров.
+function resetFilters(): void {
+  navigate('/library');
+}
 
 // Собирает страницу библиотеки: заголовок + фильтры + результаты + диалог
-// Game Details. Карточки приходят с бэкенда (GET /api/games): страница
-// только передаёт параметры запроса и отдаёт ответ в library-results.
+// Game Details. Состояние фильтров хранится только в URL
+// (/library?category=puzzle&sort=rating-desc): клик по фильтру меняет URL,
+// а уже изменение URL запускает запрос GET /api/games с этими параметрами --
+// фильтрация и сортировка всегда выполняются на сервере.
 export function createLibraryPage(): HTMLElement[] {
   const gameDetails = createGameDetails();
 
@@ -20,17 +49,55 @@ export function createLibraryPage(): HTMLElement[] {
     onPageChange: () => {},
   });
 
-  const filters = createLibraryFilters(() => {});
+  const filters = createLibraryFilters({
+    onCategoryChange: (category) => updateQuery({ category }),
+    onSortChange: (sort) => updateQuery({ sort }),
+    onRetryCategories: () => {
+      void loadCategories();
+    },
+  });
+
+  let categories: Category[] = [];
+  let defaultCategory = FALLBACK_CATEGORY;
+  let hasCategoriesFailed = false;
+
+  // Категории (чипы фильтра) тоже приходят с бэкенда. Активным по
+  // умолчанию становится чип с isDefault: true.
+  async function loadCategories(): Promise<void> {
+    filters.showCategoriesLoading();
+
+    try {
+      categories = await fetchCategories();
+      defaultCategory =
+        categories.find((category) => category.isDefault)?.slug ?? FALLBACK_CATEGORY;
+      filters.setCategories(categories);
+
+      if (hasCategoriesFailed) {
+        showSnackbar('Categories loaded successfully.', { variant: 'success' });
+      }
+      hasCategoriesFailed = false;
+    } catch {
+      hasCategoriesFailed = true;
+      filters.showCategoriesError();
+      showSnackbar('Failed to load categories.', { variant: 'error' });
+    }
+  }
+
+  function getCategoryLabel(slug: string): string {
+    return (
+      categories.find((category) => category.slug === slug)?.label ?? formatCategoryLabel(slug)
+    );
+  }
+
+  const categoriesRequest = loadCategories();
 
   let controller: AbortController | undefined;
-  let hasFailed = false;
+  let hasGamesFailed = false;
 
-  async function loadGames(): Promise<void> {
+  async function loadGames(query: GamesQuery): Promise<void> {
     controller?.abort();
     controller = new AbortController();
     const { signal } = controller;
-
-    const query: GamesQuery = { category: 'all', sort: 'rating-desc', page: 1, limit: PAGE_LIMIT };
 
     results.showLoading({ page: query.page, totalPages: 1 });
 
@@ -41,27 +108,86 @@ export function createLibraryPage(): HTMLElement[] {
         results.showEmpty();
       } else {
         results.showGames(
-          response.data.map((game) => toLibraryCard(game, formatCategoryLabel(game.category))),
+          response.data.map((game) => toLibraryCard(game, getCategoryLabel(game.category))),
           { page: response.meta.page, totalPages: response.meta.totalPages },
         );
       }
 
-      if (hasFailed) {
+      if (hasGamesFailed) {
         showSnackbar('Games loaded successfully.', { variant: 'success' });
       }
-      hasFailed = false;
+      hasGamesFailed = false;
     } catch (error) {
       if (isAbortError(error)) return;
 
-      hasFailed = true;
+      // 4xx -- сервер не знает таких параметров (например, несуществующая
+      // категория в ссылке): это не сбой сети, повтор не поможет.
+      if (error instanceof ApiError && error.isClientError) {
+        results.showNotFound(
+          'Data Not Found',
+          'There are no games for these filters. Check the link or reset the filters.',
+          resetFilters,
+        );
+        showSnackbar('No data found for the requested filters.', { variant: 'error' });
+        return;
+      }
+
+      hasGamesFailed = true;
       results.showError("We couldn't load games. Please try again.", () => {
-        void loadGames();
+        void loadGames(query);
       });
       showSnackbar('Failed to load games.', { variant: 'error' });
     }
   }
 
-  void loadGames();
+  // Приводит страницу в соответствие с URL: подсвечивает фильтры и
+  // запрашивает нужный список игр.
+  async function syncWithUrl(route: RouteState): Promise<void> {
+    const categoryParam = route.query.get('category');
+    const sortParam = route.query.get('sort') ?? DEFAULT_SORT;
 
-  return [createLibraryHeader(), filters, results.element, gameDetails.element];
+    // Без category в URL нужна категория по умолчанию (isDefault) --
+    // дожидаемся списка категорий, чтобы запросить именно её.
+    if (!categoryParam) {
+      await categoriesRequest;
+    }
+
+    const category = categoryParam ?? defaultCategory;
+    filters.setActiveCategory(category);
+
+    if (!isSortOption(sortParam)) {
+      filters.setSort(DEFAULT_SORT);
+      results.showNotFound(
+        'Data Not Found',
+        `Sort option "${sortParam}" doesn't exist. Reset the filters to see all games.`,
+        resetFilters,
+      );
+      return;
+    }
+
+    filters.setSort(sortParam);
+
+    await loadGames({ category, sort: sortParam, page: 1, limit: PAGE_LIMIT });
+  }
+
+  const header = createLibraryHeader();
+  let lastListKey = getListKey(getRoute().query);
+
+  const unsubscribe = subscribe((route) => {
+    // Страница библиотеки уже убрана (переход на другой маршрут).
+    if (route.page !== 'library' || !results.element.isConnected) {
+      unsubscribe();
+      return;
+    }
+
+    const listKey = getListKey(route.query);
+    if (listKey === lastListKey) return;
+
+    lastListKey = listKey;
+    void syncWithUrl(route);
+  });
+
+  void syncWithUrl(getRoute());
+
+  return [header, filters.element, results.element, gameDetails.element];
 }

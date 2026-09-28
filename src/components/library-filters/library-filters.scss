@@ -90,3 +90,21 @@
 .library-filters__sort-icon {
   font-size: 18px;
 }
+
+// Состояния загрузки категорий из API (Story 3).
+.library-filters__chip-skeleton {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 36px;
+  border-radius: utils.radius('xl');
+}
+
+.library-filters__error {
+  align-self: center;
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: utils.color('like');
+  white-space: nowrap;
+}
