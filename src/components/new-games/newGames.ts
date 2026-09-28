@@ -1,19 +1,16 @@
 import './new-games.scss';
-import tailsideCardUrl from '../../assets/images/tailside-cozy-cafe-sim-card.jpg';
-import islandersCardUrl from '../../assets/images/islanders-new-shores-card.jpg';
-import vacationCardUrl from '../../assets/images/vacation-cafe-simulator-card.jpg';
-import winterBurrowCardUrl from '../../assets/images/winter-burrow-card.jpg';
-import shelvePotionsCardUrl from '../../assets/images/shelve-the-potions-card.jpg';
-import tailsideCardPeekUrl from '../../assets/images/tailside-cozy-cafe-sim-card-peek.jpg';
-import islandersCardPeekUrl from '../../assets/images/islanders-new-shores-card-peek.jpg';
-import vacationCardPeekUrl from '../../assets/images/vacation-cafe-simulator-card-peek.jpg';
-import winterBurrowCardPeekUrl from '../../assets/images/winter-burrow-card-peek.jpg';
-import shelvePotionsCardPeekUrl from '../../assets/images/shelve-the-potions-card-peek.jpg';
 import { createGameDetails } from '../game-details/gameDetails';
+import { createEmptyState, createErrorBanner, createSkeleton } from '../feedback/feedback';
+import { showSnackbar } from '../snackbar/snackbar';
+import { fetchFeaturedGames, isAbortError, type GameSummary } from '../../shared/api';
+import { formatCompactNumber } from '../../shared/format';
+import { getGameImages } from '../../shared/gameImages';
 
 interface GameCard {
+  slug: string;
   title: string;
-  imageUrl: string;
+  // Обложки нет в проекте -> undefined, карточка рисует CSS-заглушку.
+  imageUrl?: string;
   // Отдельная, заранее обрезанная по центру версия фото для самой узкой
   // ("peek") карточки. Причина не чисто эстетическая: у object-fit: cover
   // при таком соотношении сторон контейнера (узкая и высокая карточка)
@@ -24,53 +21,29 @@ interface GameCard {
   // картинка с тем же центральным кадром, но заранее обрезанная почти
   // до нужных пропорций, не требует такого масштабирования "на лету" —
   // тот же самый кроп, но без экстремального scale и без бага рендера.
-  peekImageUrl: string;
+  peekImageUrl?: string;
   rating: string;
   likes: string;
 }
 
-// Игры и их порядок — как в макете Figma (Carousel Track, слева направо).
-// Рейтинг/лайки для "Vacation Cafe Simulator", "Islanders: New Shores" и
-// "Winter Burrow" подтверждены (сверены напрямую). Для "Tailside: Cozy Cafe
-// Sim" и "Shelve the Potions!" реальные цифры пока не подтверждены —
-// значения ниже временные, ждут подтверждения.
-const GAMES: readonly GameCard[] = [
-  {
-    title: 'Tailside: Cozy Cafe Sim',
-    imageUrl: tailsideCardUrl,
-    peekImageUrl: tailsideCardPeekUrl,
-    rating: '4.6',
-    likes: '12.4K',
-  },
-  {
-    title: 'Islanders: New Shores',
-    imageUrl: islandersCardUrl,
-    peekImageUrl: islandersCardPeekUrl,
-    rating: '4.9',
-    likes: '54.2K',
-  },
-  {
-    title: 'Vacation Cafe Simulator',
-    imageUrl: vacationCardUrl,
-    peekImageUrl: vacationCardPeekUrl,
-    rating: '4.8',
-    likes: '28.7K',
-  },
-  {
-    title: 'Winter Burrow',
-    imageUrl: winterBurrowCardUrl,
-    peekImageUrl: winterBurrowCardPeekUrl,
-    rating: '4.9',
-    likes: '32.4K',
-  },
-  {
-    title: 'Shelve the Potions!',
-    imageUrl: shelvePotionsCardUrl,
-    peekImageUrl: shelvePotionsCardPeekUrl,
-    rating: '4.4',
-    likes: '7.1K',
-  },
-];
+// Игры карусели приходят с бэкенда: GET /api/games?featured=true
+// (порядок -- как в ответе API).
+function toGameCard(game: GameSummary): GameCard {
+  const images = getGameImages(game.slug);
+
+  return {
+    slug: game.slug,
+    title: game.name,
+    imageUrl: images?.card,
+    peekImageUrl: images?.peek ?? images?.card,
+    rating: game.rating.toFixed(1),
+    likes: formatCompactNumber(game.likesCount),
+  };
+}
+
+// Сколько карточек-скелетонов показывать, пока идёт запрос: с запасом на
+// самую широкую (десктопную) раскладку из 5 видимых карточек.
+const SKELETON_CARD_COUNT = 5;
 
 // Ширины карточек по "расстоянию" от активной (0 — активная), сверены в
 // Figma для каждого брейкпоинта (Carousel Track на home-mobile/-tablet/-desktop).
@@ -146,16 +119,24 @@ function createCard(game: GameCard, onOpen: () => void): HTMLLIElement {
   const imageClip = document.createElement('div');
   imageClip.className = 'new-games__image-clip';
 
-  const image = document.createElement('img');
-  image.className = 'new-games__card-image';
-  image.src = game.imageUrl;
-  image.alt = game.title;
-  image.loading = 'lazy';
-  // Полный и peek-варианты URL держим на самом элементе — render() ниже
-  // переключает src при входе/выходе карточки из состояния "peek".
-  image.dataset.fullSrc = game.imageUrl;
-  image.dataset.peekSrc = game.peekImageUrl;
-  imageClip.append(image);
+  if (game.imageUrl) {
+    const image = document.createElement('img');
+    image.className = 'new-games__card-image';
+    image.src = game.imageUrl;
+    image.alt = game.title;
+    image.loading = 'lazy';
+    // Полный и peek-варианты URL держим на самом элементе — render() ниже
+    // переключает src при входе/выходе карточки из состояния "peek".
+    image.dataset.fullSrc = game.imageUrl;
+    image.dataset.peekSrc = game.peekImageUrl ?? game.imageUrl;
+    imageClip.append(image);
+  } else {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'new-games__card-image new-games__card-image--placeholder';
+    placeholder.setAttribute('role', 'img');
+    placeholder.setAttribute('aria-label', game.title);
+    imageClip.append(placeholder);
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'new-games__overlay';
@@ -184,6 +165,17 @@ function createCard(game: GameCard, onOpen: () => void): HTMLLIElement {
   meta.append(rating, likes);
   overlay.append(title, meta);
   card.append(imageClip, overlay);
+
+  return card;
+}
+
+// Карточка-скелетон той же формы, что и настоящая: пока идёт запрос,
+// render() раскладывает их по тем же ширинам, и вёрстка секции не прыгает.
+function createSkeletonCard(): HTMLLIElement {
+  const card = document.createElement('li');
+  card.className = 'new-games__card new-games__card--skeleton';
+  card.setAttribute('aria-hidden', 'true');
+  card.append(createSkeleton('new-games__skeleton'));
 
   return card;
 }
@@ -256,11 +248,15 @@ export function createNewGames(): HTMLElement {
     gameDetails.open();
   }
 
-  const cards = GAMES.map((game) => createCard(game, handleCardOpen));
-  rail.append(...cards);
+  let cards: HTMLLIElement[] = [];
   track.append(rail);
 
-  section.append(headerRow, track, gameDetails.element);
+  // Сюда выводится баннер ошибки или заглушка "нет данных" вместо ленты.
+  const status = document.createElement('div');
+  status.className = 'new-games__status';
+  status.hidden = true;
+
+  section.append(headerRow, status, track, gameDetails.element);
 
   // По умолчанию активна первая игра — так показано в макете (карточка
   // стоит вплотную к левому отступу секции, без "призрачного" пикового
@@ -325,7 +321,7 @@ export function createNewGames(): HTMLElement {
       // комментарий у peekImageUrl в GameCard) — избегаем экстремального
       // object-fit: cover масштабирования, из-за которого угол фото не
       // дорезался по скруглению рамки.
-      const image = card.querySelector<HTMLImageElement>('.new-games__card-image');
+      const image = card.querySelector<HTMLImageElement>('img.new-games__card-image');
       if (image) {
         const nextSrc = isPeek ? image.dataset.peekSrc : image.dataset.fullSrc;
         if (nextSrc && image.getAttribute('src') !== nextSrc) {
@@ -371,16 +367,19 @@ export function createNewGames(): HTMLElement {
   // подтверждено Figma) -- бесконечность здесь именно в навигации, а не в
   // непрерывной ленте без начала/конца.
   function goToNext(): void {
-    activeIndex = (activeIndex + 1) % GAMES.length;
+    if (cards.length === 0) return;
+    activeIndex = (activeIndex + 1) % cards.length;
     render();
   }
 
   function goToPrev(): void {
-    activeIndex = (activeIndex - 1 + GAMES.length) % GAMES.length;
+    if (cards.length === 0) return;
+    activeIndex = (activeIndex - 1 + cards.length) % cards.length;
     render();
   }
 
   let autoplayTimer: ReturnType<typeof setInterval> | undefined;
+  let isReady = false;
 
   function stopAutoplay(): void {
     if (autoplayTimer !== undefined) {
@@ -391,7 +390,17 @@ export function createNewGames(): HTMLElement {
 
   function startAutoplay(): void {
     stopAutoplay();
-    autoplayTimer = setInterval(goToNext, AUTOPLAY_INTERVAL_MS);
+    // Пока данные не загружены (скелетон/ошибка), лента не крутится.
+    if (!isReady || cards.length < 2) return;
+    autoplayTimer = setInterval(() => {
+      // Секцию убрали со страницы (переход на другой маршрут) -- таймер
+      // больше не нужен.
+      if (!section.isConnected) {
+        stopAutoplay();
+        return;
+      }
+      goToNext();
+    }, AUTOPLAY_INTERVAL_MS);
   }
 
   prevButton.addEventListener('click', () => {
@@ -467,8 +476,83 @@ export function createNewGames(): HTMLElement {
   });
   resizeObserver.observe(track);
 
-  render();
-  startAutoplay();
+  function setCards(nextCards: HTMLLIElement[]): void {
+    cards = nextCards;
+    activeIndex = 0;
+    rail.replaceChildren(...cards);
+    render();
+  }
+
+  function setArrowsEnabled(enabled: boolean): void {
+    prevButton.disabled = !enabled;
+    nextButton.disabled = !enabled;
+  }
+
+  function showSkeleton(): void {
+    isReady = false;
+    stopAutoplay();
+    setArrowsEnabled(false);
+    status.hidden = true;
+    status.replaceChildren();
+    track.hidden = false;
+    track.setAttribute('aria-busy', 'true');
+    setCards(Array.from({ length: SKELETON_CARD_COUNT }, () => createSkeletonCard()));
+  }
+
+  function showStatus(content: HTMLElement): void {
+    isReady = false;
+    stopAutoplay();
+    setArrowsEnabled(false);
+    track.removeAttribute('aria-busy');
+    track.hidden = true;
+    setCards([]);
+    status.replaceChildren(content);
+    status.hidden = false;
+  }
+
+  let controller: AbortController | undefined;
+  let hasFailed = false;
+
+  async function load(): Promise<void> {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
+    showSkeleton();
+
+    try {
+      const response = await fetchFeaturedGames(signal);
+      const games = response.data.map((game) => toGameCard(game));
+
+      if (games.length === 0) {
+        showStatus(createEmptyState('No new games yet', 'Featured games will appear here soon.'));
+        return;
+      }
+
+      track.removeAttribute('aria-busy');
+      isReady = true;
+      setCards(games.map((game) => createCard(game, handleCardOpen)));
+      setArrowsEnabled(games.length > 1);
+      startAutoplay();
+
+      if (hasFailed) {
+        showSnackbar('New games loaded successfully.', { variant: 'success' });
+      }
+      hasFailed = false;
+    } catch (error) {
+      if (isAbortError(error)) return;
+
+      hasFailed = true;
+      showStatus(
+        createErrorBanner("We couldn't load new games. Please try again.", () => {
+          void load();
+        }),
+      );
+      showSnackbar('Failed to load new games.', { variant: 'error' });
+    }
+  }
+
+  void load();
 
   return section;
 }
