@@ -216,6 +216,21 @@ export interface LibraryResultsController {
 
 const SKELETON_CARD_COUNT = 6;
 
+// Видимых кнопок-страниц: 4 на desktop/tablet, 3 на mobile (< 768px).
+const MOBILE_QUERY = '(max-width: 767px)';
+const VISIBLE_PAGES_DESKTOP = 4;
+const VISIBLE_PAGES_MOBILE = 3;
+
+// "Окно" номеров страниц вокруг текущей: если страниц больше, чем
+// помещается кнопок, показываем соседние с текущей, не выходя за 1..total.
+export function getPageWindow(page: number, totalPages: number, visibleCount: number): number[] {
+  const size = Math.min(visibleCount, totalPages);
+  const idealStart = page - Math.floor((size - 1) / 2);
+  const start = Math.min(Math.max(idealStart, 1), totalPages - size + 1);
+
+  return Array.from({ length: size }, (_, index) => start + index);
+}
+
 export function createLibraryResults(options: LibraryResultsOptions): LibraryResultsController {
   const section = document.createElement('section');
   section.className = 'library-results';
@@ -234,12 +249,16 @@ export function createLibraryResults(options: LibraryResultsOptions): LibraryRes
   pagination.setAttribute('aria-label', 'Pagination');
 
   let pageState: PaginationState = { page: 1, totalPages: 1 };
+  let isPaginationDisabled = false;
+  const mobileQuery = window.matchMedia(MOBILE_QUERY);
 
   // Кнопки пагинации строятся только из метаданных ответа сервера
   // (meta.page и meta.totalPages).
   function renderPagination(disabled = false): void {
+    isPaginationDisabled = disabled;
     const { page, totalPages } = pageState;
     const lastPage = Math.max(totalPages, 1);
+    const visibleCount = mobileQuery.matches ? VISIBLE_PAGES_MOBILE : VISIBLE_PAGES_DESKTOP;
 
     const prev = createPageButton('Previous page', 'arrow_back');
     prev.classList.add('library-results__page--nav');
@@ -247,7 +266,7 @@ export function createLibraryResults(options: LibraryResultsOptions): LibraryRes
     prev.addEventListener('click', () => options.onPageChange(page - 1));
 
     const pageButtons: HTMLButtonElement[] = [];
-    for (let pageNumber = 1; pageNumber <= lastPage; pageNumber += 1) {
+    for (const pageNumber of getPageWindow(page, lastPage, visibleCount)) {
       const pageButton = createPageButton(String(pageNumber));
       if (pageNumber === page) {
         pageButton.classList.add('library-results__page--active');
@@ -318,6 +337,11 @@ export function createLibraryResults(options: LibraryResultsOptions): LibraryRes
     pagination.hidden = false;
     renderPagination(true);
   }
+
+  // Переход через 768px меняет число видимых кнопок -- перерисовываем.
+  mobileQuery.addEventListener('change', () => {
+    if (section.isConnected) renderPagination(isPaginationDisabled);
+  });
 
   section.append(grid, status, pagination);
 
