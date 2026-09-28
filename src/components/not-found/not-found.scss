@@ -1,0 +1,67 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: utils.space('2');
+  padding: utils.space('8') utils.space('2');
+  text-align: center;
+
+  @include utils.respond-up('tablet') {
+    padding-block: utils.space('14');
+  }
+}
+
+.not-found__code {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: 96px;
+  line-height: 1;
+  color: utils.color('primary');
+  -webkit-text-stroke: 3px utils.color('on-primary');
+
+  @include utils.respond-up('tablet') {
+    font-size: 160px;
+  }
+}
+
+.not-found__title {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-2xl);
+  color: utils.color('on-primary');
+
+  @include utils.respond-up('tablet') {
+    font-size: var(--font-size-3xl);
+  }
+}
+
+.not-found__message {
+  max-width: 520px;
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: utils.color('on-bg');
+}
+
+.not-found__path {
+  max-width: 100%;
+  margin: 0;
+  padding: utils.space('05') utils.space('1');
+  overflow-wrap: anywhere;
+  border-radius: utils.radius('md');
+  background: utils.color('secondary');
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: utils.color('on-primary');
+}
+
+.not-found__action {
+  margin-top: utils.space('2');
+}
