@@ -1,25 +1,16 @@
 import './header.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
 import { createMobileMenu } from '../mobile-menu/mobileMenu';
-import { createAuthDialog, type AuthMode } from '../auth-dialog/authDialog';
+import type { AuthMode } from '../auth-dialog/authDialog';
 import { CURRENT_USER } from '../../shared/authState';
-
-interface NavLink {
-  label: string;
-  href: string;
-}
-
-const NAV_LINKS: readonly NavLink[] = [
-  { label: 'Home', href: '#/' },
-  { label: 'Library', href: '#/library' },
-  { label: 'Tournaments', href: '#' },
-  { label: 'Community', href: '#' },
-];
+import { getRoute, toHref } from '../../app/router';
+import { NAV_LINKS, applyNavLinkTarget } from '../../shared/navLinks';
 
 function createLogo(): HTMLAnchorElement {
   const logo = document.createElement('a');
   logo.className = 'header__logo';
-  logo.href = '/';
+  logo.href = toHref('/');
+  logo.dataset.route = '/';
   logo.setAttribute('aria-label', 'MiniGames — home');
 
   const icon = document.createElement('img');
@@ -42,19 +33,16 @@ function createNavLinks(): HTMLUListElement {
   const list = document.createElement('ul');
   list.className = 'header__links';
 
-  const currentRoute = window.location.hash.slice(1) || '/';
+  const currentPage = getRoute().page;
 
-  for (const { label, href } of NAV_LINKS) {
+  for (const navLink of NAV_LINKS) {
     const item = document.createElement('li');
     const link = document.createElement('a');
     link.className = 'header__link';
-    link.href = href;
-    link.textContent = label;
+    applyNavLinkTarget(link, navLink);
+    link.textContent = navLink.label;
 
-    const isPlaceholder = href === '#';
-    const linkRoute = href.startsWith('#') ? href.slice(1) || '/' : href;
-
-    if (!isPlaceholder && linkRoute === currentRoute) {
+    if (navLink.page && navLink.page === currentPage) {
       link.classList.add('header__link--active');
       link.setAttribute('aria-current', 'page');
     }
@@ -183,7 +171,11 @@ function createBurgerButton(): HTMLButtonElement {
   return burger;
 }
 
-export function createHeader(): HTMLElement {
+// Диалог авторизации живёт на уровне приложения (main.ts), а не внутри
+// шапки: его открытое состояние хранится в URL (?auth=login|register), и
+// шапка пересоздаётся при смене страницы -- диалог при этом не должен
+// пропадать. Шапка лишь просит открыть его через onAuthRequest.
+export function createHeader(onAuthRequest: (mode: AuthMode) => void): HTMLElement {
   const header = document.createElement('header');
   header.className = 'header';
 
@@ -191,8 +183,6 @@ export function createHeader(): HTMLElement {
   inner.className = 'header__inner';
 
   const burger = createBurgerButton();
-
-  const authDialog = createAuthDialog();
 
   // Меню может закрыться не только кликом по бургеру (бэкдроп/Escape/клик
   // по ссылке/ресайз до laptop) -- onStateChange держит aria-состояние
@@ -204,19 +194,15 @@ export function createHeader(): HTMLElement {
       burger.setAttribute('aria-expanded', String(isOpen));
       burger.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
     },
-    (mode) => authDialog.open(mode),
+    onAuthRequest,
   );
 
   burger.addEventListener('click', () => {
     menu.toggle();
   });
 
-  inner.append(
-    createLogo(),
-    createNav(authDialog.open),
-    createMobileControls(burger, authDialog.open),
-  );
-  header.append(inner, menu.element, authDialog.element);
+  inner.append(createLogo(), createNav(onAuthRequest), createMobileControls(burger, onAuthRequest));
+  header.append(inner, menu.element);
 
   return header;
 }
