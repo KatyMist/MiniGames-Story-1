@@ -475,3 +475,33 @@
   font-size: var(--font-size-sm);
   color: utils.color('on-bg');
 }
+
+.game-details__comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: utils.space('1');
+}
+
+.game-details__comment-time {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-xs);
+  color: utils.color('on-bg');
+}
+
+// Лайки комментария в Story 3 -- только счётчик (без клика).
+span.game-details__comment-like {
+  cursor: default;
+}
+
+.game-details__comments-content {
+  display: flex;
+  flex-direction: column;
+  gap: utils.space('2');
+}
+
+.game-details__skeleton-comment {
+  flex: 1 1 auto;
+  height: 48px;
+}
