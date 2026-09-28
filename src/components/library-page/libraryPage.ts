@@ -167,6 +167,8 @@ export function createLibraryPage(): HTMLElement[] {
     // Без category в URL нужна категория по умолчанию (isDefault) --
     // дожидаемся списка категорий, чтобы запросить именно её.
     if (!categoryParam) {
+      // Скелетон карточек -- сразу, не дожидаясь ответа по категориям.
+      results.showLoading({ page: parsePage(route.query.get('page')) ?? 1, totalPages: 1 });
       await categoriesRequest;
     }
 
