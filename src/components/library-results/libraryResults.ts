@@ -7,14 +7,14 @@ import {
 } from '../feedback/feedback';
 import type { GameSummary } from '../../shared/api';
 import { formatCompactNumber } from '../../shared/format';
-import { getGameImages } from '../../shared/gameImages';
+import { resolveAssetUrl } from '../../shared/gameImages';
 
 // Карточка библиотеки в том виде, в каком её рисует UI (данные -- из
 // ответа GET /api/games).
 export interface LibraryCard {
   slug: string;
   title: string;
-  imageUrl?: string;
+  imageUrl: string;
   categoryLabel: string;
   price: string;
   rating: number;
@@ -26,7 +26,7 @@ export function toLibraryCard(game: GameSummary, categoryLabel: string): Library
   return {
     slug: game.slug,
     title: game.name,
-    imageUrl: getGameImages(game.slug)?.card,
+    imageUrl: resolveAssetUrl(game.cardImage),
     categoryLabel,
     price: game.price,
     rating: game.rating,
@@ -71,18 +71,9 @@ function createDetailsButton(title: string, onClick: () => void): HTMLButtonElem
   return button;
 }
 
-// Обложка игры. Если картинки этой игры в проекте нет -- блок того же
-// размера с градиентом и названием (CSS-заглушка вместо битого <img>).
-function createCardImage(game: LibraryCard): HTMLElement {
-  if (game.imageUrl) {
-    const image = document.createElement('img');
-    image.className = 'library-results__image';
-    image.src = game.imageUrl;
-    image.alt = game.title;
-    image.loading = 'lazy';
-    return image;
-  }
-
+// Обложка игры -- по пути cardImage из API. Если файла нет, <img> заменяется
+// блоком того же размера с градиентом и названием (CSS-заглушка).
+function createImagePlaceholder(game: LibraryCard): HTMLElement {
   const placeholder = document.createElement('div');
   placeholder.className = 'library-results__image library-results__image--placeholder';
   placeholder.setAttribute('role', 'img');
@@ -94,6 +85,19 @@ function createCardImage(game: LibraryCard): HTMLElement {
   placeholder.append(text);
 
   return placeholder;
+}
+
+function createCardImage(game: LibraryCard): HTMLElement {
+  const image = document.createElement('img');
+  image.className = 'library-results__image';
+  image.alt = game.title;
+  image.loading = 'lazy';
+  image.addEventListener('error', () => image.replaceWith(createImagePlaceholder(game)), {
+    once: true,
+  });
+  image.src = game.imageUrl;
+
+  return image;
 }
 
 function createCard(game: LibraryCard, onDetailsClick: (slug: string) => void): HTMLLIElement {

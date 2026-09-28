@@ -4,13 +4,13 @@ import { createEmptyState, createErrorBanner, createSkeleton } from '../feedback
 import { showSnackbar } from '../snackbar/snackbar';
 import { fetchFeaturedGames, isAbortError, type GameSummary } from '../../shared/api';
 import { formatCompactNumber } from '../../shared/format';
-import { getGameImages } from '../../shared/gameImages';
+import { getPeekImageUrl, resolveAssetUrl } from '../../shared/gameImages';
 
 interface GameCard {
   slug: string;
   title: string;
-  // Обложки нет в проекте -> undefined, карточка рисует CSS-заглушку.
-  imageUrl?: string;
+  // Обложка из ответа API (cardImage).
+  imageUrl: string;
   // Отдельная, заранее обрезанная по центру версия фото для самой узкой
   // ("peek") карточки. Причина не чисто эстетическая: у object-fit: cover
   // при таком соотношении сторон контейнера (узкая и высокая карточка)
@@ -21,7 +21,7 @@ interface GameCard {
   // картинка с тем же центральным кадром, но заранее обрезанная почти
   // до нужных пропорций, не требует такого масштабирования "на лету" —
   // тот же самый кроп, но без экстремального scale и без бага рендера.
-  peekImageUrl?: string;
+  peekImageUrl: string;
   rating: string;
   likes: string;
 }
@@ -29,13 +29,13 @@ interface GameCard {
 // Игры карусели приходят с бэкенда: GET /api/games?featured=true
 // (порядок -- как в ответе API).
 function toGameCard(game: GameSummary): GameCard {
-  const images = getGameImages(game.slug);
+  const imageUrl = resolveAssetUrl(game.cardImage);
 
   return {
     slug: game.slug,
     title: game.name,
-    imageUrl: images?.card,
-    peekImageUrl: images?.peek ?? images?.card,
+    imageUrl,
+    peekImageUrl: getPeekImageUrl(imageUrl),
     rating: game.rating.toFixed(1),
     likes: formatCompactNumber(game.likesCount),
   };
@@ -118,24 +118,30 @@ function createCard(game: GameCard, onOpen: (slug: string) => void): HTMLLIEleme
   const imageClip = document.createElement('div');
   imageClip.className = 'new-games__image-clip';
 
-  if (game.imageUrl) {
-    const image = document.createElement('img');
-    image.className = 'new-games__card-image';
-    image.src = game.imageUrl;
-    image.alt = game.title;
-    image.loading = 'lazy';
-    // Полный и peek-варианты URL держим на самом элементе — render() ниже
-    // переключает src при входе/выходе карточки из состояния "peek".
-    image.dataset.fullSrc = game.imageUrl;
-    image.dataset.peekSrc = game.peekImageUrl ?? game.imageUrl;
-    imageClip.append(image);
-  } else {
+  const image = document.createElement('img');
+  image.className = 'new-games__card-image';
+  image.src = game.imageUrl;
+  image.alt = game.title;
+  image.loading = 'lazy';
+  // Полный и peek-варианты URL держим на самом элементе — render() ниже
+  // переключает src при входе/выходе карточки из состояния "peek".
+  image.dataset.fullSrc = game.imageUrl;
+  image.dataset.peekSrc = game.peekImageUrl;
+  // Нет peek-версии -> берём полную обложку; нет и её -> CSS-заглушка.
+  image.addEventListener('error', () => {
+    if (image.dataset.peekSrc !== game.imageUrl && image.src.endsWith(game.peekImageUrl)) {
+      image.dataset.peekSrc = game.imageUrl;
+      image.src = game.imageUrl;
+      return;
+    }
+
     const placeholder = document.createElement('div');
     placeholder.className = 'new-games__card-image new-games__card-image--placeholder';
     placeholder.setAttribute('role', 'img');
     placeholder.setAttribute('aria-label', game.title);
-    imageClip.append(placeholder);
-  }
+    image.replaceWith(placeholder);
+  });
+  imageClip.append(image);
 
   const overlay = document.createElement('div');
   overlay.className = 'new-games__overlay';

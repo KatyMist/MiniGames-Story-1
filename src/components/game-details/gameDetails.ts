@@ -15,7 +15,7 @@ import {
   type GameRecord,
 } from '../../shared/api';
 import { formatCompactNumber, formatScore } from '../../shared/format';
-import { getGameImages } from '../../shared/gameImages';
+import { getCardImagePath, resolveAssetUrl, setImageSources } from '../../shared/gameImages';
 
 export interface GameDetailsOptions {
   // Закрытие действием пользователя (крестик/бэкдроп/Escape). Владелец
@@ -248,25 +248,27 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   let comments: CommentsSectionHandle | undefined;
   let hasFailed = false;
 
-  // Обложка игры (media). Реальной hero-картинки с бэкенда во фронтенде
-  // нет, поэтому берём обложку карточки из проекта; если нет и её --
-  // декоративная заглушка (градиент + название).
-  function renderHero(title: string, slug: string): void {
-    const imageUrl = getGameImages(slug)?.card;
+  // Обложка игры (media): heroImage из API; если такого файла нет --
+  // обложка карточки этой игры; нет и её -- декоративная заглушка
+  // (градиент + название).
+  function renderHero(game: GameDetails): void {
+    const showPlaceholder = (): void => {
+      const heroTitle = document.createElement('span');
+      heroTitle.className = 'game-details__hero-placeholder-title';
+      heroTitle.textContent = game.name;
+      heroMedia.replaceChildren(heroTitle);
+    };
 
-    if (imageUrl) {
-      const image = document.createElement('img');
-      image.className = 'game-details__hero-image';
-      image.src = imageUrl;
-      image.alt = title;
-      heroMedia.replaceChildren(image);
-      return;
-    }
+    const image = document.createElement('img');
+    image.className = 'game-details__hero-image';
+    image.alt = game.name;
+    heroMedia.replaceChildren(image);
 
-    const heroTitle = document.createElement('span');
-    heroTitle.className = 'game-details__hero-placeholder-title';
-    heroTitle.textContent = title;
-    heroMedia.replaceChildren(heroTitle);
+    setImageSources(
+      image,
+      [resolveAssetUrl(game.heroImage), resolveAssetUrl(getCardImagePath(game.slug))],
+      showPlaceholder,
+    );
   }
 
   function setLabel(labelledByTitle: boolean): void {
@@ -288,7 +290,7 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
 
   function showGame(game: GameDetails): void {
     hero.classList.remove('game-details__hero--loading');
-    renderHero(game.name, game.slug);
+    renderHero(game);
     // Комментарии -- отдельный запрос со своими состояниями загрузки/ошибки.
     comments = createCommentsSection(game.slug);
     body.replaceChildren(
