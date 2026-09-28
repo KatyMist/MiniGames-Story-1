@@ -401,12 +401,67 @@
   font-size: 20px;
 }
 
-.library-results__empty {
-  margin: 0;
-  padding: utils.space('4') utils.space('2');
-  font-family: var(--font-family-base);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-base);
-  color: utils.color('on-bg');
+.library-results__page:disabled:not(.library-results__page--active) {
+  cursor: not-allowed;
+}
+
+// Состояния загрузки данных из API (Story 3).
+.library-results__status {
+  display: flex;
+}
+
+.library-results__image--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: utils.space('2');
+  background: linear-gradient(135deg, utils.color('indigo'), utils.color('on-primary'));
+}
+
+.library-results__image-title {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  color: utils.color('white');
   text-align: center;
+}
+
+.library-results__card--skeleton {
+  box-shadow: none;
+  border-color: utils.color('outline-variant');
+}
+
+.library-results__skeleton-image {
+  border-radius: 0;
+}
+
+.library-results__skeleton-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: utils.space('1');
+  min-width: 0;
+  padding: utils.space('2');
+}
+
+.library-results__skeleton-line {
+  width: 100%;
+  height: 14px;
+
+  &--title {
+    width: 60%;
+    height: 22px;
+  }
+
+  &--short {
+    width: 40%;
+  }
+
+  &--button {
+    width: 96px;
+    height: 32px;
+    margin-top: auto;
+    border-radius: utils.radius('xl');
+  }
 }
