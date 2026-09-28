@@ -10,6 +10,7 @@
 
 - Данные главной, библиотеки и Game Details загружаются из [MiniGames REST API](https://faxb76kxra.execute-api.eu-central-1.amazonaws.com/docs) (`src/shared/api.ts`).
 - Фильтрация по категориям, сортировка и пагинация выполняются на сервере (`GET /api/games?category=…&sort=…&page=…&limit=6`).
+- Картинки игр берутся по путям из API (`cardImage`, `heroImage`) и лежат в `public/assets/images/games`; если файла нет, показывается CSS-заглушка с названием игры.
 - Скелетоны, баннеры ошибок с повтором запроса, заглушки «нет данных» и Snackbar-уведомления — общие для всех секций (`src/components/feedback`, `src/components/snackbar`).
 - Собственный роутер на History API (`src/app/router.ts`): URL — единственный источник правды для страницы, фильтров, пагинации и открытых диалогов.
   - `/`, `/home` — главная, `/library` — библиотека, любой другой путь — страница 404;
