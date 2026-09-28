@@ -1,38 +1,48 @@
-import catMailCardUrl from '../assets/images/cat.jpg';
-import heartopiaCardUrl from '../assets/images/heartopia.png';
-import paliaCardUrl from '../assets/images/palia.png';
-import islandersCardUrl from '../assets/images/islanders-new-shores-card.jpg';
-import islandersCardPeekUrl from '../assets/images/islanders-new-shores-card-peek.jpg';
-import shelvePotionsCardUrl from '../assets/images/shelve-the-potions-card.jpg';
-import shelvePotionsCardPeekUrl from '../assets/images/shelve-the-potions-card-peek.jpg';
-import tailsideCardUrl from '../assets/images/tailside-cozy-cafe-sim-card.jpg';
-import tailsideCardPeekUrl from '../assets/images/tailside-cozy-cafe-sim-card-peek.jpg';
-import vacationCardUrl from '../assets/images/vacation-cafe-simulator-card.jpg';
-import vacationCardPeekUrl from '../assets/images/vacation-cafe-simulator-card-peek.jpg';
-import winterBurrowCardUrl from '../assets/images/winter-burrow-card.jpg';
-import winterBurrowCardPeekUrl from '../assets/images/winter-burrow-card-peek.jpg';
+// Картинки игр приходят из API путями относительно фронтенда:
+//   cardImage: "/assets/images/games/<slug>-card.jpg"
+//   heroImage: "/assets/images/games/<slug>-hero.jpg"
+// Файлы лежат в public/assets/images/games (Vite копирует public как есть),
+// поэтому путь из ответа API используется напрямую -- с учётом base
+// (на GitHub Pages сайт живёт в подпапке /MiniGames-Story-1/).
+// Если файла нет, UI показывает CSS-заглушку с названием игры.
 
-// API отдаёт пути вида "/assets/images/games/<slug>-card.jpg" относительно
-// фронтенда, а сами файлы лежат в проекте (src/assets/images). Сопоставляем
-// их по slug игры. Для игр без обложки в проекте UI рисует CSS-заглушку с
-// названием игры (картинка -- контент, а не часть вёрстки).
-export interface GameImageSet {
-  card: string;
-  // Заранее обрезанная версия для узкой "peek"-карточки карусели.
-  peek?: string;
+export function resolveAssetUrl(path: string): string {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
 }
 
-const GAME_IMAGES: Readonly<Record<string, GameImageSet>> = {
-  'cat-mail-co': { card: catMailCardUrl },
-  heartopia: { card: heartopiaCardUrl },
-  palia: { card: paliaCardUrl },
-  'islanders-new-shores': { card: islandersCardUrl, peek: islandersCardPeekUrl },
-  'shelve-the-potions': { card: shelvePotionsCardUrl, peek: shelvePotionsCardPeekUrl },
-  'tailside-cozy-cafe-sim': { card: tailsideCardUrl, peek: tailsideCardPeekUrl },
-  'vacation-cafe-simulator': { card: vacationCardUrl, peek: vacationCardPeekUrl },
-  'winter-burrow': { card: winterBurrowCardUrl, peek: winterBurrowCardPeekUrl },
-};
+// Путь к обложке карточки по slug -- тем же шаблоном, что и cardImage в API
+// (нужен в Game Details: там API отдаёт только heroImage).
+export function getCardImagePath(slug: string): string {
+  return `/assets/images/games/${slug}-card.jpg`;
+}
 
-export function getGameImages(slug: string): GameImageSet | undefined {
-  return GAME_IMAGES[slug];
+// Заранее обрезанная версия обложки для узкой "peek"-карточки карусели:
+// "<slug>-card.jpg" -> "<slug>-card-peek.jpg".
+export function getPeekImageUrl(cardUrl: string): string {
+  return cardUrl.replace(/-card(\.\w+)$/, '-card-peek$1');
+}
+
+// Пробует url по очереди; если не загрузился ни один -- onFail.
+export function setImageSources(
+  image: HTMLImageElement,
+  urls: readonly string[],
+  onFail: () => void,
+): void {
+  let index = 0;
+
+  const tryNext = (): void => {
+    const url = urls[index];
+    index += 1;
+
+    if (url === undefined) {
+      image.removeEventListener('error', tryNext);
+      onFail();
+      return;
+    }
+
+    image.src = url;
+  };
+
+  image.addEventListener('error', tryNext);
+  tryNext();
 }
