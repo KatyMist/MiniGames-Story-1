@@ -88,6 +88,7 @@ function getActiveWidthScale(): readonly number[] {
 function createIcon(name: 'star' | 'favorite', modifier: string): HTMLSpanElement {
   const icon = document.createElement('span');
   icon.className = `material-symbols-outlined new-games__icon ${modifier}`;
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = name;
   return icon;
@@ -193,6 +194,7 @@ function createArrowButton(direction: 'prev' | 'next'): HTMLButtonElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined new-games__arrow-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = direction === 'prev' ? 'arrow_back' : 'arrow_forward';
 

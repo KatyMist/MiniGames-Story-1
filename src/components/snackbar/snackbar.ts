@@ -62,6 +62,7 @@ export function showSnackbar(message: string, options: SnackbarOptions = {}): vo
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined snackbar__icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = ICONS[variant];
 
@@ -76,6 +77,7 @@ export function showSnackbar(message: string, options: SnackbarOptions = {}): vo
 
   const closeIcon = document.createElement('span');
   closeIcon.className = 'material-symbols-outlined';
+  closeIcon.translate = false;
   closeIcon.setAttribute('aria-hidden', 'true');
   closeIcon.textContent = 'close';
   close.append(closeIcon);
