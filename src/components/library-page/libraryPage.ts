@@ -1,40 +1,67 @@
 import { createLibraryHeader } from '../library-header/libraryHeader';
-import { createLibraryFilters, type LibraryFilterState } from '../library-filters/libraryFilters';
-import { createLibraryResults } from '../library-results/libraryResults';
+import { createLibraryFilters } from '../library-filters/libraryFilters';
+import { createLibraryResults, toLibraryCard } from '../library-results/libraryResults';
 import { createGameDetails } from '../game-details/gameDetails';
-import { LIBRARY_GAMES, type LibraryGame } from '../../shared/libraryGames';
+import { showSnackbar } from '../snackbar/snackbar';
+import { fetchGames, isAbortError, type GamesQuery } from '../../shared/api';
+import { formatCategoryLabel } from '../../shared/format';
 
-function getVisibleGames(state: Readonly<LibraryFilterState>): LibraryGame[] {
-  const filtered =
-    state.category === 'All Games'
-      ? [...LIBRARY_GAMES]
-      : LIBRARY_GAMES.filter((game) => game.category === state.category);
-
-  return filtered.sort((a, b) =>
-    state.sortDescending ? b.rating - a.rating : a.rating - b.rating,
-  );
-}
+// Карточек на странице библиотеки -- по заданию (limit=6).
+const PAGE_LIMIT = 6;
 
 // Собирает страницу библиотеки: заголовок + фильтры + результаты + диалог
-// Game Details. Фильтры сами по себе ничего не рендерят -- library-filters
-// только сообщает о смене категории/сортировки через onChange, а здесь эти
-// изменения применяются к общему списку игр (shared/libraryGames) и
-// передаются в уже смонтированный library-results через results.update(),
-// без пересоздания всей секции результатов. Диалог один на страницу:
-// содержимое всегда статичное ("Tukoni: Forest Keepers" -- см. Common Game
-// Details Content Requirements в задании), поэтому кнопке Details на любой
-// карточке достаточно вызвать один и тот же gameDetails.open().
+// Game Details. Карточки приходят с бэкенда (GET /api/games): страница
+// только передаёт параметры запроса и отдаёт ответ в library-results.
 export function createLibraryPage(): HTMLElement[] {
   const gameDetails = createGameDetails();
 
-  const results = createLibraryResults(
-    getVisibleGames({ category: 'All Games', sortDescending: true }),
-    gameDetails.open,
-  );
-
-  const filters = createLibraryFilters((state) => {
-    results.update(getVisibleGames(state));
+  const results = createLibraryResults({
+    onDetailsClick: () => gameDetails.open(),
+    onPageChange: () => {},
   });
+
+  const filters = createLibraryFilters(() => {});
+
+  let controller: AbortController | undefined;
+  let hasFailed = false;
+
+  async function loadGames(): Promise<void> {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
+    const query: GamesQuery = { category: 'all', sort: 'rating-desc', page: 1, limit: PAGE_LIMIT };
+
+    results.showLoading({ page: query.page, totalPages: 1 });
+
+    try {
+      const response = await fetchGames(query, signal);
+
+      if (response.data.length === 0) {
+        results.showEmpty();
+      } else {
+        results.showGames(
+          response.data.map((game) => toLibraryCard(game, formatCategoryLabel(game.category))),
+          { page: response.meta.page, totalPages: response.meta.totalPages },
+        );
+      }
+
+      if (hasFailed) {
+        showSnackbar('Games loaded successfully.', { variant: 'success' });
+      }
+      hasFailed = false;
+    } catch (error) {
+      if (isAbortError(error)) return;
+
+      hasFailed = true;
+      results.showError("We couldn't load games. Please try again.", () => {
+        void loadGames();
+      });
+      showSnackbar('Failed to load games.', { variant: 'error' });
+    }
+  }
+
+  void loadGames();
 
   return [createLibraryHeader(), filters, results.element, gameDetails.element];
 }
