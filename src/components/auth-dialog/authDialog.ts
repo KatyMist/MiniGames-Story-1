@@ -423,7 +423,20 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
   renderMode();
 
-  panel.append(tabs, content);
+  // Явная кнопка закрытия (вдобавок к бэкдропу и Escape).
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'auth-dialog__close';
+  closeButton.setAttribute('aria-label', 'Close authentication dialog');
+
+  const closeIcon = document.createElement('span');
+  closeIcon.className = 'material-symbols-outlined';
+  closeIcon.setAttribute('aria-hidden', 'true');
+  closeIcon.textContent = 'close';
+  closeButton.append(closeIcon);
+  closeButton.addEventListener('click', dismiss);
+
+  panel.append(closeButton, tabs, content);
   root.append(backdrop, panel);
 
   return { element: root, open, close };
