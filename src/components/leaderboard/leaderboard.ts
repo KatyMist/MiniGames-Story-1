@@ -1,5 +1,10 @@
 import './leaderboard.scss';
 
+import { createEmptyState, createErrorBanner, createSkeleton } from '../feedback/feedback';
+import { showSnackbar } from '../snackbar/snackbar';
+import { fetchLeaderboard, isAbortError, type LeaderboardEntry } from '../../shared/api';
+import { formatScore } from '../../shared/format';
+
 type AvatarColor = 'primary' | 'mint' | 'sky' | 'pink' | 'lavender';
 
 interface Player {
@@ -13,59 +18,39 @@ interface Player {
   favoriteGame: string;
 }
 
-// Игроки и их порядок — как в макете Figma (Top Players This Week -> Table).
-const PLAYERS: readonly Player[] = [
-  {
-    rank: 1,
-    initials: 'AP',
-    avatarColor: 'primary',
-    name: 'Alex_Pro99',
-    gamesPlayed: 142,
-    totalScore: '94,250',
-    streakDays: 12,
-    favoriteGame: 'Heartopia',
-  },
-  {
-    rank: 2,
-    initials: 'CG',
-    avatarColor: 'mint',
-    name: 'CozyGamer_x',
-    gamesPlayed: 118,
-    totalScore: '81,400',
-    streakDays: 8,
-    favoriteGame: 'Cat Mail Co.',
-  },
-  {
-    rank: 3,
-    initials: 'MM',
-    avatarColor: 'sky',
-    name: 'MatchMaster',
-    gamesPlayed: 98,
-    totalScore: '72,110',
-    streakDays: 5,
-    favoriteGame: 'Tiny Glade',
-  },
-  {
-    rank: 4,
-    initials: 'BP',
-    avatarColor: 'pink',
-    name: 'BubblePop',
-    gamesPlayed: 87,
-    totalScore: '65,900',
-    streakDays: 3,
-    favoriteGame: 'Whisper of the House',
-  },
-  {
-    rank: 5,
-    initials: 'SG',
-    avatarColor: 'lavender',
-    name: 'SudokuGod',
-    gamesPlayed: 74,
-    totalScore: '59,320',
-    streakDays: 2,
-    favoriteGame: 'Cat Chess',
-  },
-];
+// Цвета аватаров по порядку строк -- как в макете Figma (Top Players This
+// Week -> Table): primary, mint, sky, pink, lavender.
+const AVATAR_COLORS: readonly AvatarColor[] = ['primary', 'mint', 'sky', 'pink', 'lavender'];
+
+const SKELETON_ROW_COUNT = 5;
+
+// Инициалы из ника: заглавные буквы ("Alex_Pro99" -> "AP", "MatchMaster"
+// -> "MM"), а если их меньше двух -- первые буквы ника.
+function getInitials(name: string): string {
+  const capitals = name.match(/[A-Z]/g) ?? [];
+
+  if (capitals.length >= 2) {
+    return capitals.slice(0, 2).join('');
+  }
+
+  const letters = name.replaceAll(/[^a-z]/gi, '');
+
+  return (letters.slice(0, 2) || name.slice(0, 2)).toUpperCase();
+}
+
+// Данные таблицы приходят с бэкенда: GET /api/leaderboard.
+function toPlayer(entry: LeaderboardEntry, index: number): Player {
+  return {
+    rank: entry.rank,
+    initials: getInitials(entry.playerName),
+    avatarColor: AVATAR_COLORS[index % AVATAR_COLORS.length] ?? 'primary',
+    name: entry.playerName,
+    gamesPlayed: entry.gamesPlayed,
+    totalScore: formatScore(entry.totalScore),
+    streakDays: entry.streakDays,
+    favoriteGame: entry.favoriteGameName,
+  };
+}
 
 // Заголовки колонок таблицы — RANK/PLAYER выровнены по левому краю,
 // остальные — по центру (см. Figma: Table Header).
@@ -148,6 +133,23 @@ function createRow(player: Player): HTMLTableRowElement {
   return row;
 }
 
+// Строка-скелетон с теми же ячейками, что и у настоящей строки -- таблица
+// во время загрузки сохраняет свою ширину и высоту.
+function createSkeletonRow(): HTMLTableRowElement {
+  const row = document.createElement('tr');
+  row.className = 'leaderboard__row leaderboard__row--skeleton';
+  row.setAttribute('aria-hidden', 'true');
+
+  for (const column of COLUMNS) {
+    const cell = document.createElement('td');
+    cell.className = `leaderboard__cell leaderboard__cell--${column.align}`;
+    cell.append(createSkeleton('leaderboard__skeleton'));
+    row.append(cell);
+  }
+
+  return row;
+}
+
 export function createLeaderboard(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'leaderboard';
@@ -176,11 +178,69 @@ export function createLeaderboard(): HTMLElement {
   thead.append(createHeadRow());
 
   const tbody = document.createElement('tbody');
-  tbody.append(...PLAYERS.map((player) => createRow(player)));
 
   table.append(thead, tbody);
   wrapper.append(table);
-  section.append(header, wrapper);
+
+  // Баннер ошибки / заглушка "нет данных" -- вместо таблицы.
+  const status = document.createElement('div');
+  status.className = 'leaderboard__status';
+  status.hidden = true;
+
+  section.append(header, status, wrapper);
+
+  function showStatus(content: HTMLElement): void {
+    wrapper.hidden = true;
+    table.removeAttribute('aria-busy');
+    status.replaceChildren(content);
+    status.hidden = false;
+  }
+
+  let controller: AbortController | undefined;
+  let hasFailed = false;
+
+  async function load(): Promise<void> {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
+    status.hidden = true;
+    status.replaceChildren();
+    wrapper.hidden = false;
+    table.setAttribute('aria-busy', 'true');
+    tbody.replaceChildren(...Array.from({ length: SKELETON_ROW_COUNT }, () => createSkeletonRow()));
+
+    try {
+      const entries = await fetchLeaderboard(signal);
+
+      if (entries.length === 0) {
+        showStatus(
+          createEmptyState('No players yet', 'Play a few games to appear on the leaderboard.'),
+        );
+        return;
+      }
+
+      table.removeAttribute('aria-busy');
+      tbody.replaceChildren(...entries.map((entry, index) => createRow(toPlayer(entry, index))));
+
+      if (hasFailed) {
+        showSnackbar('Leaderboard loaded successfully.', { variant: 'success' });
+      }
+      hasFailed = false;
+    } catch (error) {
+      if (isAbortError(error)) return;
+
+      hasFailed = true;
+      showStatus(
+        createErrorBanner("We couldn't load the leaderboard. Please try again.", () => {
+          void load();
+        }),
+      );
+      showSnackbar('Failed to load the leaderboard.', { variant: 'error' });
+    }
+  }
+
+  void load();
 
   return section;
 }
