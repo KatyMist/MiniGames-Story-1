@@ -2,11 +2,8 @@ import './mobile-menu.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
 import type { AuthMode } from '../auth-dialog/authDialog';
 import { CURRENT_USER } from '../../shared/authState';
-
-interface MobileMenuLink {
-  label: string;
-  href: string;
-}
+import { getRoute } from '../../app/router';
+import { applyNavLinkTarget, type NavLink } from '../../shared/navLinks';
 
 interface MobileMenuHandle {
   element: HTMLElement;
@@ -41,6 +38,7 @@ function createCloseButton(onClose: () => void): HTMLButtonElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'close';
 
@@ -49,31 +47,23 @@ function createCloseButton(onClose: () => void): HTMLButtonElement {
   return button;
 }
 
-// Активной подсвечивается только реально существующий сейчас маршрут
-// (Home '#' -> '/', Library '#/library'). Tournaments и Community пока
-// тоже указывают на '#' (страниц ещё нет — см. header.ts), поэтому их
-// специально не подсвечиваем, чтобы не заявлять их "текущими" наравне с
-// Home.
-function createNavLinks(
-  links: readonly MobileMenuLink[],
-  onNavigate: () => void,
-): HTMLUListElement {
+// Активной подсвечивается только ссылка текущей страницы. Tournaments и
+// Community пока заглушки без маршрута (страниц ещё нет -- см.
+// shared/navLinks.ts), поэтому их не подсвечиваем.
+function createNavLinks(links: readonly NavLink[], onNavigate: () => void): HTMLUListElement {
   const list = document.createElement('ul');
   list.className = 'mobile-menu__links';
 
-  const currentRoute = window.location.hash.slice(1) || '/';
+  const currentPage = getRoute().page;
 
-  for (const { label, href } of links) {
+  for (const navLink of links) {
     const item = document.createElement('li');
     const link = document.createElement('a');
     link.className = 'mobile-menu__link';
-    link.href = href;
-    link.textContent = label;
+    applyNavLinkTarget(link, navLink);
+    link.textContent = navLink.label;
 
-    const isPlaceholder = href === '#' && label !== 'Home';
-    const linkRoute = href.startsWith('#') ? href.slice(1) || '/' : href;
-
-    if (!isPlaceholder && linkRoute === currentRoute) {
+    if (navLink.page && navLink.page === currentPage) {
       link.classList.add('mobile-menu__link--active');
       link.setAttribute('aria-current', 'page');
     }
@@ -128,7 +118,7 @@ function createActions(
 }
 
 export function createMobileMenu(
-  links: readonly MobileMenuLink[],
+  links: readonly NavLink[],
   onStateChange?: (isOpen: boolean) => void,
   onAuthRequest?: (mode: AuthMode) => void,
 ): MobileMenuHandle {

@@ -4,6 +4,7 @@ import deskUrl from '../../assets/images/game-developer-desk.png';
 function createUploadIcon(): HTMLSpanElement {
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined game-developer__cta-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'upload';
 

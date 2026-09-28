@@ -1,5 +1,39 @@
 import './library-results.scss';
-import type { LibraryGame } from '../../shared/libraryGames';
+import {
+  createEmptyState,
+  createErrorBanner,
+  createNotFoundState,
+  createSkeleton,
+} from '../feedback/feedback';
+import type { GameSummary } from '../../shared/api';
+import { formatCompactNumber } from '../../shared/format';
+import { resolveAssetUrl } from '../../shared/gameImages';
+
+// Карточка библиотеки в том виде, в каком её рисует UI (данные -- из
+// ответа GET /api/games).
+export interface LibraryCard {
+  slug: string;
+  title: string;
+  imageUrl: string;
+  categoryLabel: string;
+  price: string;
+  rating: number;
+  likes: string;
+  description: string;
+}
+
+export function toLibraryCard(game: GameSummary, categoryLabel: string): LibraryCard {
+  return {
+    slug: game.slug,
+    title: game.name,
+    imageUrl: resolveAssetUrl(game.cardImage),
+    categoryLabel,
+    price: game.price,
+    rating: game.rating,
+    likes: formatCompactNumber(game.likesCount),
+    description: game.shortDescription,
+  };
+}
 
 // Раньше лайки сюда не добавляла (см. историю) -- по 68 Hug × 24 Hug из
 // Dev Mode-скрина для десктопной сетки казалось, что влезает только
@@ -16,6 +50,7 @@ function createStat(
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined library-results__stat-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = iconName;
 
@@ -37,15 +72,38 @@ function createDetailsButton(title: string, onClick: () => void): HTMLButtonElem
   return button;
 }
 
-function createCard(game: LibraryGame, onDetailsClick: () => void): HTMLLIElement {
-  const card = document.createElement('li');
-  card.className = 'library-results__card';
+// Обложка игры -- по пути cardImage из API. Если файла нет, <img> заменяется
+// блоком того же размера с градиентом и названием (CSS-заглушка).
+function createImagePlaceholder(game: LibraryCard): HTMLElement {
+  const placeholder = document.createElement('div');
+  placeholder.className = 'library-results__image library-results__image--placeholder';
+  placeholder.setAttribute('role', 'img');
+  placeholder.setAttribute('aria-label', game.title);
 
+  const text = document.createElement('span');
+  text.className = 'library-results__image-title';
+  text.textContent = game.title;
+  placeholder.append(text);
+
+  return placeholder;
+}
+
+function createCardImage(game: LibraryCard): HTMLElement {
   const image = document.createElement('img');
   image.className = 'library-results__image';
-  image.src = game.imageUrl;
   image.alt = game.title;
   image.loading = 'lazy';
+  image.addEventListener('error', () => image.replaceWith(createImagePlaceholder(game)), {
+    once: true,
+  });
+  image.src = game.imageUrl;
+
+  return image;
+}
+
+function createCard(game: LibraryCard, onDetailsClick: (slug: string) => void): HTMLLIElement {
+  const card = document.createElement('li');
+  card.className = 'library-results__card';
 
   const content = document.createElement('div');
   content.className = 'library-results__content';
@@ -65,7 +123,7 @@ function createCard(game: LibraryGame, onDetailsClick: () => void): HTMLLIElemen
 
   const badge = document.createElement('span');
   badge.className = 'library-results__badge';
-  badge.textContent = game.category;
+  badge.textContent = game.categoryLabel;
 
   titleGroup.append(title, badge);
 
@@ -91,10 +149,33 @@ function createCard(game: LibraryGame, onDetailsClick: () => void): HTMLLIElemen
 
   const bottomRow = document.createElement('div');
   bottomRow.className = 'library-results__bottom';
-  bottomRow.append(stats, createDetailsButton(game.title, onDetailsClick));
+  bottomRow.append(
+    stats,
+    createDetailsButton(game.title, () => onDetailsClick(game.slug)),
+  );
 
   content.append(topRow, description, bottomRow);
-  card.append(image, content);
+  card.append(createCardImage(game), content);
+
+  return card;
+}
+
+// Карточка-скелетон повторяет форму настоящей: картинка + строки текста.
+function createSkeletonCard(): HTMLLIElement {
+  const card = document.createElement('li');
+  card.className = 'library-results__card library-results__card--skeleton';
+  card.setAttribute('aria-hidden', 'true');
+
+  const content = document.createElement('div');
+  content.className = 'library-results__skeleton-content';
+  content.append(
+    createSkeleton('library-results__skeleton-line library-results__skeleton-line--title'),
+    createSkeleton('library-results__skeleton-line'),
+    createSkeleton('library-results__skeleton-line library-results__skeleton-line--short'),
+    createSkeleton('library-results__skeleton-line library-results__skeleton-line--button'),
+  );
+
+  card.append(createSkeleton('library-results__image library-results__skeleton-image'), content);
 
   return card;
 }
@@ -107,86 +188,56 @@ function createPageButton(label: string, iconName?: string): HTMLButtonElement {
   if (iconName) {
     const icon = document.createElement('span');
     icon.className = 'material-symbols-outlined library-results__page-icon';
+    icon.translate = false;
     icon.setAttribute('aria-hidden', 'true');
     icon.textContent = iconName;
     button.append(icon);
     button.setAttribute('aria-label', label);
   } else {
     button.textContent = label;
+    button.setAttribute('aria-label', `Page ${label}`);
   }
 
   return button;
 }
 
-const PAGE_SIZE = 4;
-
-// Пагинация -- полноценная: количество кнопок-страниц считается от
-// текущего (уже отфильтрованного) списка игр, а не зашито статично.
-// setPage меняет currentPage и просит вызывающий код перерисовать и грид,
-// и саму пагинацию (активная кнопка/disabled-состояние Prev/Next).
-interface PaginationController extends HTMLDivElement {
-  render: () => void;
+export interface PaginationState {
+  page: number;
+  totalPages: number;
 }
 
-function createPagination(
-  getTotalPages: () => number,
-  getCurrentPage: () => number,
-  setPage: (page: number) => void,
-): PaginationController {
-  const pagination = document.createElement('div');
-  pagination.className = 'library-results__pagination';
-
-  function render(): void {
-    pagination.replaceChildren();
-
-    const totalPages = getTotalPages();
-    const currentPage = getCurrentPage();
-
-    const prev = createPageButton('Previous page', 'arrow_back');
-    prev.classList.add('library-results__page--nav');
-    prev.disabled = currentPage <= 1;
-    prev.addEventListener('click', () => setPage(currentPage - 1));
-    pagination.append(prev);
-
-    for (let page = 1; page <= totalPages; page += 1) {
-      const pageButton = createPageButton(String(page));
-      if (page === currentPage) {
-        pageButton.classList.add('library-results__page--active');
-        pageButton.setAttribute('aria-current', 'page');
-      }
-      pageButton.addEventListener('click', () => setPage(page));
-      pagination.append(pageButton);
-    }
-
-    const next = createPageButton('Next page', 'arrow_forward');
-    next.classList.add('library-results__page--nav');
-    next.disabled = currentPage >= totalPages;
-    next.addEventListener('click', () => setPage(currentPage + 1));
-    pagination.append(next);
-  }
-
-  render();
-
-  return Object.assign(pagination, { render });
-}
-
-function createEmptyState(): HTMLParagraphElement {
-  const message = document.createElement('p');
-  message.className = 'library-results__empty';
-  message.textContent = 'No games match this category yet.';
-  message.hidden = true;
-  return message;
+export interface LibraryResultsOptions {
+  onDetailsClick: (slug: string) => void;
+  onPageChange: (page: number) => void;
 }
 
 export interface LibraryResultsController {
   element: HTMLElement;
-  update: (games: readonly LibraryGame[]) => void;
+  showLoading: (pagination: PaginationState) => void;
+  showGames: (games: readonly LibraryCard[], pagination: PaginationState) => void;
+  showEmpty: (onReset: () => void) => void;
+  showError: (message: string, onRetry: () => void) => void;
+  showNotFound: (title: string, message: string, onReset: () => void) => void;
 }
 
-export function createLibraryResults(
-  games: readonly LibraryGame[],
-  onDetailsClick: () => void,
-): LibraryResultsController {
+const SKELETON_CARD_COUNT = 6;
+
+// Видимых кнопок-страниц: 4 на desktop/tablet, 3 на mobile (< 768px).
+const MOBILE_QUERY = '(max-width: 767px)';
+const VISIBLE_PAGES_DESKTOP = 4;
+const VISIBLE_PAGES_MOBILE = 3;
+
+// "Окно" номеров страниц вокруг текущей: если страниц больше, чем
+// помещается кнопок, показываем соседние с текущей, не выходя за 1..total.
+export function getPageWindow(page: number, totalPages: number, visibleCount: number): number[] {
+  const size = Math.min(visibleCount, totalPages);
+  const idealStart = page - Math.floor((size - 1) / 2);
+  const start = Math.min(Math.max(idealStart, 1), totalPages - size + 1);
+
+  return Array.from({ length: size }, (_, index) => start + index);
+}
+
+export function createLibraryResults(options: LibraryResultsOptions): LibraryResultsController {
   const section = document.createElement('section');
   section.className = 'library-results';
   section.setAttribute('aria-label', 'Game search results');
@@ -194,49 +245,119 @@ export function createLibraryResults(
   const grid = document.createElement('ul');
   grid.className = 'library-results__grid';
 
-  const emptyState = createEmptyState();
+  // Баннер ошибки / "нет данных" / "не найдено" -- вместо сетки карточек.
+  const status = document.createElement('div');
+  status.className = 'library-results__status';
+  status.hidden = true;
 
-  let currentGames: readonly LibraryGame[] = games;
-  let currentPage = 1;
+  const pagination = document.createElement('nav');
+  pagination.className = 'library-results__pagination';
+  pagination.setAttribute('aria-label', 'Pagination');
 
-  const getTotalPages = (): number => Math.max(1, Math.ceil(currentGames.length / PAGE_SIZE));
+  let pageState: PaginationState = { page: 1, totalPages: 1 };
+  let isPaginationDisabled = false;
+  const mobileQuery = window.matchMedia(MOBILE_QUERY);
 
-  function renderGrid(): void {
-    grid.replaceChildren();
+  // Кнопки пагинации строятся только из метаданных ответа сервера
+  // (meta.page и meta.totalPages).
+  function renderPagination(disabled = false): void {
+    isPaginationDisabled = disabled;
+    const { page, totalPages } = pageState;
+    const lastPage = Math.max(totalPages, 1);
+    const visibleCount = mobileQuery.matches ? VISIBLE_PAGES_MOBILE : VISIBLE_PAGES_DESKTOP;
 
-    const isEmpty = currentGames.length === 0;
-    grid.hidden = isEmpty;
-    emptyState.hidden = !isEmpty;
+    const prev = createPageButton('Previous page', 'arrow_back');
+    prev.classList.add('library-results__page--nav');
+    prev.disabled = disabled || page <= 1;
+    prev.addEventListener('click', () => options.onPageChange(page - 1));
 
-    if (isEmpty) {
-      return;
+    const pageButtons: HTMLButtonElement[] = [];
+    for (const pageNumber of getPageWindow(page, lastPage, visibleCount)) {
+      const pageButton = createPageButton(String(pageNumber));
+      if (pageNumber === page) {
+        pageButton.classList.add('library-results__page--active');
+        pageButton.setAttribute('aria-current', 'page');
+      }
+      pageButton.disabled = disabled;
+      pageButton.addEventListener('click', () => {
+        if (pageNumber !== page) options.onPageChange(pageNumber);
+      });
+      pageButtons.push(pageButton);
     }
 
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageGames = currentGames.slice(start, start + PAGE_SIZE);
-    grid.append(...pageGames.map((game) => createCard(game, onDetailsClick)));
+    const next = createPageButton('Next page', 'arrow_forward');
+    next.classList.add('library-results__page--nav');
+    next.disabled = disabled || page >= lastPage;
+    next.addEventListener('click', () => options.onPageChange(page + 1));
+
+    pagination.replaceChildren(prev, ...pageButtons, next);
   }
 
-  const pagination = createPagination(
-    getTotalPages,
-    () => currentPage,
-    (page) => {
-      currentPage = page;
-      renderGrid();
-      pagination.render();
-    },
-  );
-
-  function update(nextGames: readonly LibraryGame[]): void {
-    currentGames = nextGames;
-    currentPage = 1;
-    renderGrid();
-    pagination.render();
-    pagination.hidden = currentGames.length === 0;
+  function showStatus(content: HTMLElement): void {
+    section.removeAttribute('aria-busy');
+    grid.hidden = true;
+    grid.replaceChildren();
+    status.replaceChildren(content);
+    status.hidden = false;
   }
 
-  section.append(grid, emptyState, pagination);
-  update(games);
+  function showLoading(nextPagination: PaginationState): void {
+    pageState = nextPagination;
+    section.setAttribute('aria-busy', 'true');
+    status.hidden = true;
+    status.replaceChildren();
+    grid.hidden = false;
+    grid.replaceChildren(
+      ...Array.from({ length: SKELETON_CARD_COUNT }, () => createSkeletonCard()),
+    );
+    pagination.hidden = false;
+    renderPagination(true);
+  }
 
-  return { element: section, update };
+  function showGames(games: readonly LibraryCard[], nextPagination: PaginationState): void {
+    pageState = nextPagination;
+    section.removeAttribute('aria-busy');
+    status.hidden = true;
+    status.replaceChildren();
+    grid.hidden = false;
+    grid.replaceChildren(...games.map((game) => createCard(game, options.onDetailsClick)));
+    pagination.hidden = false;
+    renderPagination();
+  }
+
+  // Запрос успешен, но игр по выбранным фильтрам нет -- баннер
+  // "Data Not Found" в области списка (визуально отличается от ошибки),
+  // пагинация при этом остаётся: страница 1 и неактивные стрелки.
+  function showEmpty(onReset: () => void): void {
+    showStatus(
+      createEmptyState('Data Not Found', 'No games match the selected filters.', {
+        label: 'Reset filters',
+        onClick: onReset,
+      }),
+    );
+    pageState = { page: 1, totalPages: 1 };
+    pagination.hidden = false;
+    renderPagination(true);
+  }
+
+  function showError(message: string, onRetry: () => void): void {
+    showStatus(createErrorBanner(message, onRetry));
+    pagination.hidden = true;
+  }
+
+  function showNotFound(title: string, message: string, onReset: () => void): void {
+    showStatus(createNotFoundState(title, message, { label: 'Reset filters', onClick: onReset }));
+    pageState = { page: 1, totalPages: 1 };
+    pagination.hidden = false;
+    renderPagination(true);
+  }
+
+  // Переход через 768px меняет число видимых кнопок -- перерисовываем.
+  mobileQuery.addEventListener('change', () => {
+    if (section.isConnected) renderPagination(isPaginationDisabled);
+  });
+
+  section.append(grid, status, pagination);
+
+  return { element: section, showLoading, showGames, showEmpty, showError, showNotFound };
 }

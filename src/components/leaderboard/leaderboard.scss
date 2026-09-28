@@ -197,3 +197,16 @@ $table-border-width: 2.5px;
   color: utils.color('on-primary');
   white-space: nowrap;
 }
+
+// Состояния загрузки данных из API (Story 3).
+.leaderboard__skeleton {
+  display: inline-block;
+  width: 72px;
+  max-width: 100%;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.leaderboard__status {
+  display: flex;
+}

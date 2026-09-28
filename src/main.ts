@@ -6,6 +6,19 @@ import { createLeaderboard } from './components/leaderboard/leaderboard';
 import { createGameDeveloper } from './components/game-developer/gameDeveloper';
 import { createFooter } from './components/footer/footer';
 import { createLibraryPage } from './components/library-page/libraryPage';
+import { createNotFoundPage } from './components/not-found/notFound';
+import { createAuthDialog, type AuthMode } from './components/auth-dialog/authDialog';
+import { createGameDetails } from './components/game-details/gameDetails';
+import {
+  closeDialog,
+  getRoute,
+  startRouter,
+  subscribe,
+  updateQuery,
+  type PageName,
+  type RouteState,
+} from './app/router';
+import { openAuth } from './app/navigation';
 
 function renderHomePage(main: HTMLElement): void {
   main.append(createHero(), createNewGames(), createLeaderboard(), createGameDeveloper());
@@ -21,42 +34,95 @@ function renderLibraryPage(main: HTMLElement): void {
 // первое, что они озвучивают при переходе).
 const DEFAULT_PAGE_TITLE = 'MiniGames';
 
-const PAGE_TITLES: Readonly<Record<string, string>> = {
-  '/': DEFAULT_PAGE_TITLE,
-  '/library': 'Game Library — MiniGames',
+const PAGE_TITLES: Readonly<Record<PageName, string>> = {
+  home: DEFAULT_PAGE_TITLE,
+  library: 'Game Library — MiniGames',
+  'not-found': 'Page Not Found — MiniGames',
 };
 
-function renderApp(root: HTMLElement): void {
-  root.replaceChildren();
-
-  const main = document.createElement('main');
-  const route = window.location.hash.slice(1) || '/';
-
-  document.title = PAGE_TITLES[route] ?? DEFAULT_PAGE_TITLE;
-
-  switch (route) {
-    case '/library': {
-      renderLibraryPage(main);
-      break;
-    }
-    default: {
-      renderHomePage(main);
-      break;
-    }
-  }
-
-  root.append(createHeader(), main, createFooter());
+function isAuthMode(value: string | null): value is AuthMode {
+  return value === 'login' || value === 'register';
 }
 
 function mountApp(): void {
+  startRouter();
+
   const root = document.createElement('div');
   root.id = 'app';
   document.body.append(root);
-  renderApp(root);
 
-  window.addEventListener('hashchange', () => {
-    renderApp(root);
+  // Диалоги -- на уровне приложения: их состояние хранится в URL и должно
+  // переживать пересоздание страницы/шапки при переходах.
+  const authDialog = createAuthDialog({
+    onDismiss: () => closeDialog('auth'),
+    onModeChange: (mode) => updateQuery({ auth: mode }, { replace: true }),
   });
+
+  // Game Details: ?game=<slug> (например /library?category=arcade&page=2&game=palia).
+  const gameDetails = createGameDetails({
+    onDismiss: () => closeDialog('game'),
+  });
+
+  function renderPage(route: RouteState): void {
+    const main = document.createElement('main');
+
+    document.title = PAGE_TITLES[route.page];
+
+    switch (route.page) {
+      case 'library': {
+        renderLibraryPage(main);
+        break;
+      }
+      case 'not-found': {
+        main.append(createNotFoundPage());
+        break;
+      }
+      default: {
+        renderHomePage(main);
+        break;
+      }
+    }
+
+    root.replaceChildren(
+      createHeader(openAuth),
+      main,
+      createFooter(),
+      gameDetails.element,
+      authDialog.element,
+    );
+  }
+
+  function syncDialogs(route: RouteState): void {
+    const game = route.query.get('game');
+
+    if (game) {
+      gameDetails.open(game);
+    } else {
+      gameDetails.close();
+    }
+
+    const auth = route.query.get('auth');
+
+    if (isAuthMode(auth)) {
+      authDialog.open(auth);
+    } else {
+      authDialog.close();
+    }
+  }
+
+  // Страницу пересобираем только при смене пути; смена одних лишь
+  // query-параметров (фильтры, диалоги) обрабатывается подписчиками самих
+  // страниц/диалогов без перерисовки всего приложения.
+  subscribe((route, previous) => {
+    if (!previous || previous.path !== route.path) {
+      renderPage(route);
+    }
+    syncDialogs(route);
+  });
+
+  const initialRoute = getRoute();
+  renderPage(initialRoute);
+  syncDialogs(initialRoute);
 }
 
 document.addEventListener('DOMContentLoaded', mountApp);

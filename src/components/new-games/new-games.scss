@@ -193,6 +193,12 @@ $card-border-width: 2.5px;
   &--peek .new-games__overlay {
     display: none;
   }
+
+  // Карточки уже 288px -- только картинка, без подписи (по заданию
+  // RSS-QS-2-3-1: название, рейтинг и лайки видны от 288px).
+  &--no-info .new-games__overlay {
+    display: none;
+  }
 }
 
 // Обёртка, которая реально обрезает картинку (overflow: hidden) — жёсткая
@@ -303,4 +309,23 @@ $card-border-width: 2.5px;
   line-height: 1;
   color: utils.color('white');
   text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+}
+
+// Состояния загрузки данных из API (Story 3).
+.new-games__card-image--placeholder {
+  background: linear-gradient(135deg, utils.color('indigo'), utils.color('on-primary'));
+}
+
+.new-games__card--skeleton {
+  cursor: default;
+}
+
+.new-games__skeleton {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.new-games__status {
+  display: flex;
 }

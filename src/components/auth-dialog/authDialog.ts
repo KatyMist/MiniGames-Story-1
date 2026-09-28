@@ -2,7 +2,16 @@ import './auth-dialog.scss';
 
 export type AuthMode = 'login' | 'register';
 
-interface AuthDialogHandle {
+export interface AuthDialogOptions {
+  // Закрытие действием пользователя (бэкдроп/Escape). Если передано,
+  // диалог сам себя не закрывает, а просит об этом владельца -- тот
+  // меняет URL, и уже роутер вызывает close().
+  onDismiss?: () => void;
+  // Переключение Login/Register пользователем (вкладки и ссылки внизу формы).
+  onModeChange?: (mode: AuthMode) => void;
+}
+
+export interface AuthDialogHandle {
   element: HTMLElement;
   open: (mode: AuthMode) => void;
   close: () => void;
@@ -42,6 +51,7 @@ function createField(config: FieldConfig): HTMLDivElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined auth-dialog__input-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = config.icon;
 
@@ -76,6 +86,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined auth-dialog__input-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'lock';
 
@@ -94,6 +105,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
 
   const toggleIcon = document.createElement('span');
   toggleIcon.className = 'material-symbols-outlined';
+  toggleIcon.translate = false;
   toggleIcon.setAttribute('aria-hidden', 'true');
   toggleIcon.textContent = 'visibility';
   toggle.append(toggleIcon);
@@ -304,7 +316,7 @@ function createRegisterForm(onSwitchToLogin: () => void): HTMLFormElement {
   return form;
 }
 
-export function createAuthDialog(): AuthDialogHandle {
+export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHandle {
   const root = document.createElement('div');
   root.className = 'auth-dialog';
 
@@ -360,8 +372,8 @@ export function createAuthDialog(): AuthDialogHandle {
 
     content.append(
       isLogin
-        ? createLoginForm(() => setMode('register'))
-        : createRegisterForm(() => setMode('login')),
+        ? createLoginForm(() => selectMode('register'))
+        : createRegisterForm(() => selectMode('login')),
     );
   };
 
@@ -370,8 +382,16 @@ export function createAuthDialog(): AuthDialogHandle {
     renderMode();
   };
 
-  loginTab.addEventListener('click', () => setMode('login'));
-  registerTab.addEventListener('click', () => setMode('register'));
+  // Смена режима самим пользователем: переключаем форму и сообщаем
+  // владельцу, чтобы тот синхронизировал URL (?auth=login|register).
+  function selectMode(nextMode: AuthMode): void {
+    if (nextMode === mode) return;
+    setMode(nextMode);
+    options.onModeChange?.(nextMode);
+  }
+
+  loginTab.addEventListener('click', () => selectMode('login'));
+  registerTab.addEventListener('click', () => selectMode('register'));
 
   const close = (): void => {
     if (!isOpen) return;
@@ -381,21 +401,46 @@ export function createAuthDialog(): AuthDialogHandle {
   };
 
   const open = (requestedMode: AuthMode): void => {
+    if (isOpen && requestedMode === mode) return;
     isOpen = true;
     setMode(requestedMode);
     root.classList.add('auth-dialog--open');
     document.body.style.overflow = 'hidden';
   };
 
-  backdrop.addEventListener('click', close);
+  const dismiss = (): void => {
+    if (!isOpen) return;
+
+    if (options.onDismiss) {
+      options.onDismiss();
+    } else {
+      close();
+    }
+  };
+
+  backdrop.addEventListener('click', dismiss);
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') close();
+    if (event.key === 'Escape') dismiss();
   });
 
   renderMode();
 
-  panel.append(tabs, content);
+  // Явная кнопка закрытия (вдобавок к бэкдропу и Escape).
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'auth-dialog__close';
+  closeButton.setAttribute('aria-label', 'Close authentication dialog');
+
+  const closeIcon = document.createElement('span');
+  closeIcon.className = 'material-symbols-outlined';
+  closeIcon.translate = false;
+  closeIcon.setAttribute('aria-hidden', 'true');
+  closeIcon.textContent = 'close';
+  closeButton.append(closeIcon);
+  closeButton.addEventListener('click', dismiss);
+
+  panel.append(closeButton, tabs, content);
   root.append(backdrop, panel);
 
   return { element: root, open, close };
