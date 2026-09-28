@@ -6,6 +6,7 @@ import { createLeaderboard } from './components/leaderboard/leaderboard';
 import { createGameDeveloper } from './components/game-developer/gameDeveloper';
 import { createFooter } from './components/footer/footer';
 import { createLibraryPage } from './components/library-page/libraryPage';
+import { createNotFoundPage } from './components/not-found/notFound';
 import { createAuthDialog, type AuthMode } from './components/auth-dialog/authDialog';
 import { createGameDetails } from './components/game-details/gameDetails';
 import {
@@ -36,7 +37,7 @@ const DEFAULT_PAGE_TITLE = 'MiniGames';
 const PAGE_TITLES: Readonly<Record<PageName, string>> = {
   home: DEFAULT_PAGE_TITLE,
   library: 'Game Library — MiniGames',
-  'not-found': DEFAULT_PAGE_TITLE,
+  'not-found': 'Page Not Found — MiniGames',
 };
 
 function isAuthMode(value: string | null): value is AuthMode {
@@ -70,6 +71,10 @@ function mountApp(): void {
     switch (route.page) {
       case 'library': {
         renderLibraryPage(main);
+        break;
+      }
+      case 'not-found': {
+        main.append(createNotFoundPage());
         break;
       }
       default: {
