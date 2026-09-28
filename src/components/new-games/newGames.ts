@@ -1,5 +1,5 @@
 import './new-games.scss';
-import { createGameDetails } from '../game-details/gameDetails';
+import { openGameDetails } from '../../app/navigation';
 import { createEmptyState, createErrorBanner, createSkeleton } from '../feedback/feedback';
 import { showSnackbar } from '../snackbar/snackbar';
 import { fetchFeaturedGames, isAbortError, type GameSummary } from '../../shared/api';
@@ -93,22 +93,21 @@ function createIcon(name: 'star' | 'favorite', modifier: string): HTMLSpanElemen
   return icon;
 }
 
-function createCard(game: GameCard, onOpen: () => void): HTMLLIElement {
+function createCard(game: GameCard, onOpen: (slug: string) => void): HTMLLIElement {
   const card = document.createElement('li');
   card.className = 'new-games__card';
-  // Клик по карточке открывает диалог Game Details (контент там всегда
-  // статичный -- см. Common Game Details Content Requirements в задании,
-  // поэтому конкретная игра карточки на onOpen не влияет). role=button +
+  // Клик по карточке открывает диалог Game Details именно этой игры
+  // (по slug -> ?game=<slug> в URL). role=button +
   // tabIndex/keydown -- та же карточка доступна и с клавиатуры (Enter/
   // Space), не только мышью/тачем.
   card.setAttribute('role', 'button');
   card.tabIndex = 0;
   card.setAttribute('aria-label', `View details for ${game.title}`);
-  card.addEventListener('click', onOpen);
+  card.addEventListener('click', () => onOpen(game.slug));
   card.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onOpen();
+      onOpen(game.slug);
     }
   });
 
@@ -230,22 +229,17 @@ export function createNewGames(): HTMLElement {
   const rail = document.createElement('ul');
   rail.className = 'new-games__rail';
 
-  // Диалог Game Details -- контент там всегда статичный ("Tukoni: Forest
-  // Keepers", см. Common Game Details Content Requirements в задании),
-  // поэтому один диалог на весь слайдер, а не по одному на карточку.
-  const gameDetails = createGameDetails();
-
   // dragDistance живёт здесь (а не внутри обработчиков pointer-событий
   // ниже), чтобы handleCardOpen мог проверить её и НЕ открывать диалог
   // сразу после свайпа (иначе любой свайп по активной карточке ещё и
   // открывал бы диалог как "клик").
   let dragDistance = 0;
 
-  function handleCardOpen(): void {
+  function handleCardOpen(slug: string): void {
     if (Math.abs(dragDistance) > SWIPE_THRESHOLD_PX) {
       return;
     }
-    gameDetails.open();
+    openGameDetails(slug);
   }
 
   let cards: HTMLLIElement[] = [];
@@ -256,7 +250,7 @@ export function createNewGames(): HTMLElement {
   status.className = 'new-games__status';
   status.hidden = true;
 
-  section.append(headerRow, status, track, gameDetails.element);
+  section.append(headerRow, status, track);
 
   // По умолчанию активна первая игра — так показано в макете (карточка
   // стоит вплотную к левому отступу секции, без "призрачного" пикового
