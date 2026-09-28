@@ -304,3 +304,22 @@ $card-border-width: 2.5px;
   color: utils.color('white');
   text-shadow: 0 1px 2px rgb(0 0 0 / 50%);
 }
+
+// Состояния загрузки данных из API (Story 3).
+.new-games__card-image--placeholder {
+  background: linear-gradient(135deg, utils.color('indigo'), utils.color('on-primary'));
+}
+
+.new-games__card--skeleton {
+  cursor: default;
+}
+
+.new-games__skeleton {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.new-games__status {
+  display: flex;
+}

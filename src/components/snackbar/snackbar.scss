@@ -1,0 +1,111 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.snackbar-stack {
+  position: fixed;
+  right: utils.space('2');
+  bottom: utils.space('2');
+  left: utils.space('2');
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: utils.space('1');
+  pointer-events: none;
+
+  @include utils.respond-up('tablet') {
+    left: auto;
+    align-items: flex-end;
+    max-width: 420px;
+  }
+}
+
+.snackbar {
+  display: flex;
+  align-items: center;
+  gap: utils.space('1');
+  box-sizing: border-box;
+  width: 100%;
+  padding: utils.space('1') utils.space('1') utils.space('1') utils.space('2');
+  border: var(--border-width-default) solid utils.color('on-primary');
+  border-radius: utils.radius('lg');
+  background: utils.color('white');
+  box-shadow: utils.shadow('hard-sm');
+  color: utils.color('on-primary');
+  pointer-events: auto;
+  animation: snackbar-enter 0.2s ease;
+}
+
+.snackbar--leaving {
+  animation: snackbar-leave 0.2s ease forwards;
+}
+
+.snackbar--success {
+  background: utils.color('mint');
+}
+
+.snackbar--error {
+  border-color: utils.color('like');
+  background: #ffe3e3;
+  box-shadow: 4px 4px 0 0 utils.color('like');
+}
+
+.snackbar--info {
+  background: utils.color('sky');
+}
+
+.snackbar__icon {
+  flex-shrink: 0;
+  font-size: 22px;
+}
+
+.snackbar--error .snackbar__icon {
+  color: utils.color('like');
+}
+
+.snackbar--success .snackbar__icon {
+  color: utils.color('price-free');
+}
+
+.snackbar__message {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.snackbar__close {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: utils.space('4');
+  height: utils.space('4');
+  padding: 0;
+  border: none;
+  border-radius: utils.radius('pill');
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: rgb(0 0 0 / 8%);
+  }
+}
+
+@keyframes snackbar-enter {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+
+@keyframes snackbar-leave {
+  to {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
