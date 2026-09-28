@@ -28,7 +28,15 @@ function isSortOption(value: string): value is SortOption {
 // Параметры библиотеки, которые влияют на запрос к API. Смена остальных
 // параметров URL (открытый диалог и т.п.) не должна перезапрашивать список.
 function getListKey(query: URLSearchParams): string {
-  return ['category', 'sort'].map((key) => query.get(key) ?? '').join('|');
+  return ['category', 'sort', 'page'].map((key) => query.get(key) ?? '').join('|');
+}
+
+// page -- целое число от 1. Всё остальное ("0", "-1", "abc") -- неверная
+// ссылка, запрос к API не отправляем.
+function parsePage(value: string | null): number | undefined {
+  if (value === null) return 1;
+
+  return /^[1-9]\d*$/.test(value) ? Number(value) : undefined;
 }
 
 // "Reset filters" на баннере Data Not Found -- библиотека без параметров.
@@ -37,21 +45,25 @@ function resetFilters(): void {
 }
 
 // Собирает страницу библиотеки: заголовок + фильтры + результаты + диалог
-// Game Details. Состояние фильтров хранится только в URL
-// (/library?category=puzzle&sort=rating-desc): клик по фильтру меняет URL,
+// Game Details. Состояние фильтров и пагинации хранится только в URL
+// (/library?category=puzzle&sort=rating-desc&page=2): клик меняет URL,
 // а уже изменение URL запускает запрос GET /api/games с этими параметрами --
-// фильтрация и сортировка всегда выполняются на сервере.
+// фильтрация, сортировка и пагинация всегда выполняются на сервере.
 export function createLibraryPage(): HTMLElement[] {
   const gameDetails = createGameDetails();
 
   const results = createLibraryResults({
     onDetailsClick: () => gameDetails.open(),
-    onPageChange: () => {},
+    onPageChange: (page) => {
+      updateQuery({ page });
+      filters.element.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    },
   });
 
+  // Смена фильтра или сортировки всегда возвращает на первую страницу.
   const filters = createLibraryFilters({
-    onCategoryChange: (category) => updateQuery({ category }),
-    onSortChange: (sort) => updateQuery({ sort }),
+    onCategoryChange: (category) => updateQuery({ category, page: 1 }),
+    onSortChange: (sort) => updateQuery({ sort, page: 1 }),
     onRetryCategories: () => {
       void loadCategories();
     },
@@ -103,13 +115,21 @@ export function createLibraryPage(): HTMLElement[] {
 
     try {
       const response = await fetchGames(query, signal);
+      const { meta } = response;
 
-      if (response.data.length === 0) {
+      if (response.data.length === 0 && meta.totalPages > 0 && query.page > meta.totalPages) {
+        // Страница из ссылки больше, чем есть на сервере.
+        results.showNotFound(
+          'Data Not Found',
+          `Page ${query.page} doesn't exist. There are only ${meta.totalPages} pages for these filters.`,
+          resetFilters,
+        );
+      } else if (response.data.length === 0) {
         results.showEmpty();
       } else {
         results.showGames(
           response.data.map((game) => toLibraryCard(game, getCategoryLabel(game.category))),
-          { page: response.meta.page, totalPages: response.meta.totalPages },
+          { page: meta.page, totalPages: meta.totalPages },
         );
       }
 
@@ -167,7 +187,18 @@ export function createLibraryPage(): HTMLElement[] {
 
     filters.setSort(sortParam);
 
-    await loadGames({ category, sort: sortParam, page: 1, limit: PAGE_LIMIT });
+    const page = parsePage(route.query.get('page'));
+
+    if (page === undefined) {
+      results.showNotFound(
+        'Data Not Found',
+        `Page "${route.query.get('page') ?? ''}" doesn't exist. Reset the filters to see all games.`,
+        resetFilters,
+      );
+      return;
+    }
+
+    await loadGames({ category, sort: sortParam, page, limit: PAGE_LIMIT });
   }
 
   const header = createLibraryHeader();
