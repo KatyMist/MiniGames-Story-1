@@ -1,10 +1,15 @@
 import './hero.scss';
+import { navigate } from '../../app/router';
 
 function createCta(): HTMLButtonElement {
   const cta = document.createElement('button');
   cta.type = 'button';
   cta.className = 'btn btn--primary btn--lg hero__cta';
   cta.textContent = 'Browse Library';
+  cta.addEventListener('click', () => {
+    navigate('/library');
+    window.scrollTo({ top: 0 });
+  });
 
   return cta;
 }

@@ -1,9 +1,12 @@
 import './footer.scss';
 import logoFooterUrl from '../../assets/icons/logo-footer.png';
+import { toHref } from '../../app/router';
 
 interface FooterLink {
   label: string;
   href: string;
+  // SPA-маршрут: такие ссылки перехватывает роутер (без перезагрузки).
+  route?: string;
 }
 
 interface FooterColumn {
@@ -12,8 +15,8 @@ interface FooterColumn {
 }
 
 const EXPLORE_LINKS: FooterLink[] = [
-  { label: 'Home', href: '#' },
-  { label: 'Library', href: '#' },
+  { label: 'Home', href: '#', route: '/' },
+  { label: 'Library', href: '#', route: '/library' },
   { label: 'Categories', href: '#' },
   { label: 'Tournaments', href: '#' },
 ];
@@ -45,7 +48,10 @@ function createColumn(column: FooterColumn): HTMLDivElement {
   for (const link of column.links) {
     const anchor = document.createElement('a');
     anchor.className = 'footer__link';
-    anchor.href = link.href;
+    anchor.href = link.route ? toHref(link.route) : link.href;
+    if (link.route) {
+      anchor.dataset.route = link.route;
+    }
     anchor.textContent = link.label;
     wrapper.append(anchor);
   }
