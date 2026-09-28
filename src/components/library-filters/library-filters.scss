@@ -81,9 +81,56 @@
   letter-spacing: 0;
   color: var(--color-on-primary);
   cursor: pointer;
+}
+
+// Обёртка кнопки сортировки и её выпадающего списка. Именно она теперь
+// flex-элемент ряда фильтров: на mobile/tablet растягивается на всю ширину
+// (и кнопка вместе с ней), от laptop -- прижата к верху, как раньше кнопка.
+.library-filters__sort-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
 
   @include utils.respond-up('laptop') {
+    flex-shrink: 0;
     align-self: flex-start;
+  }
+}
+
+.library-filters__sort-menu {
+  position: absolute;
+  top: calc(100% + #{utils.space('1')});
+  right: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  min-width: 100%;
+  margin: 0;
+  padding: utils.space('05');
+  border: var(--border-width-default) solid var(--color-on-primary);
+  border-radius: utils.radius('lg');
+  background: var(--color-white);
+  box-shadow: utils.shadow('hard-sm');
+  list-style: none;
+}
+
+.library-filters__sort-option {
+  padding: utils.space('1') utils.space('2');
+  border-radius: utils.radius('md');
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  color: var(--color-on-primary);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: var(--color-secondary);
+  }
+
+  &--active {
+    background: var(--color-primary);
   }
 }
 
