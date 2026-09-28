@@ -41,6 +41,7 @@ function createStat(
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined game-details__stat-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = iconName;
 
@@ -79,6 +80,7 @@ function createActions(): HTMLDivElement {
 
   const favoriteIcon = document.createElement('span');
   favoriteIcon.className = 'material-symbols-outlined';
+  favoriteIcon.translate = false;
   favoriteIcon.setAttribute('aria-hidden', 'true');
   favoriteIcon.textContent = 'favorite';
 
@@ -230,6 +232,7 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
 
   const closeIcon = document.createElement('span');
   closeIcon.className = 'material-symbols-outlined';
+  closeIcon.translate = false;
   closeIcon.setAttribute('aria-hidden', 'true');
   closeIcon.textContent = 'close';
   closeButton.append(closeIcon);

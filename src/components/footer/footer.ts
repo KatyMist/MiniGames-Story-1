@@ -67,6 +67,7 @@ function createSocialLink(iconName: string): HTMLAnchorElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = iconName;
 
@@ -139,6 +140,7 @@ function createBottom(): HTMLDivElement {
 
   const nicknameIcon = document.createElement('span');
   nicknameIcon.className = 'material-symbols-outlined footer__nickname-icon';
+  nicknameIcon.translate = false;
   nicknameIcon.setAttribute('aria-hidden', 'true');
   nicknameIcon.textContent = 'code';
 

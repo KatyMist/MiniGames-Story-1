@@ -66,6 +66,7 @@ function createCommentLikes(likes: number): HTMLSpanElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'favorite';
 

@@ -50,6 +50,7 @@ function createStat(
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined library-results__stat-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = iconName;
 
@@ -187,6 +188,7 @@ function createPageButton(label: string, iconName?: string): HTMLButtonElement {
   if (iconName) {
     const icon = document.createElement('span');
     icon.className = 'material-symbols-outlined library-results__page-icon';
+    icon.translate = false;
     icon.setAttribute('aria-hidden', 'true');
     icon.textContent = iconName;
     button.append(icon);

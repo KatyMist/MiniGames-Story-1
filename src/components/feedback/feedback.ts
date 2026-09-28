@@ -25,6 +25,7 @@ function createBanner(options: BannerOptions): HTMLDivElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined state-banner__icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = options.icon;
 

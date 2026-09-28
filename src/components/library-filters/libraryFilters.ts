@@ -125,6 +125,7 @@ export function createLibraryFilters(options: LibraryFiltersOptions): LibraryFil
 
   const sortIcon = document.createElement('span');
   sortIcon.className = 'material-symbols-outlined library-filters__sort-icon';
+  sortIcon.translate = false;
   sortIcon.setAttribute('aria-hidden', 'true');
 
   const sortMenu = document.createElement('ul');

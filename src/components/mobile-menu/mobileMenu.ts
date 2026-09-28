@@ -38,6 +38,7 @@ function createCloseButton(onClose: () => void): HTMLButtonElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'close';
 

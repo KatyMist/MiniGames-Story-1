@@ -51,6 +51,7 @@ function createField(config: FieldConfig): HTMLDivElement {
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined auth-dialog__input-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = config.icon;
 
@@ -85,6 +86,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined auth-dialog__input-icon';
+  icon.translate = false;
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'lock';
 
@@ -103,6 +105,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
 
   const toggleIcon = document.createElement('span');
   toggleIcon.className = 'material-symbols-outlined';
+  toggleIcon.translate = false;
   toggleIcon.setAttribute('aria-hidden', 'true');
   toggleIcon.textContent = 'visibility';
   toggle.append(toggleIcon);
@@ -431,6 +434,7 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
   const closeIcon = document.createElement('span');
   closeIcon.className = 'material-symbols-outlined';
+  closeIcon.translate = false;
   closeIcon.setAttribute('aria-hidden', 'true');
   closeIcon.textContent = 'close';
   closeButton.append(closeIcon);
