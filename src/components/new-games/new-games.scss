@@ -193,6 +193,12 @@ $card-border-width: 2.5px;
   &--peek .new-games__overlay {
     display: none;
   }
+
+  // Карточки уже 288px -- только картинка, без подписи (по заданию
+  // RSS-QS-2-3-1: название, рейтинг и лайки видны от 288px).
+  &--no-info .new-games__overlay {
+    display: none;
+  }
 }
 
 // Обёртка, которая реально обрезает картинку (overflow: hidden) — жёсткая
