@@ -213,7 +213,7 @@ export interface LibraryResultsController {
   element: HTMLElement;
   showLoading: (pagination: PaginationState) => void;
   showGames: (games: readonly LibraryCard[], pagination: PaginationState) => void;
-  showEmpty: () => void;
+  showEmpty: (onReset: () => void) => void;
   showError: (message: string, onRetry: () => void) => void;
   showNotFound: (title: string, message: string, onReset: () => void) => void;
 }
@@ -323,8 +323,16 @@ export function createLibraryResults(options: LibraryResultsOptions): LibraryRes
     renderPagination();
   }
 
-  function showEmpty(): void {
-    showStatus(createEmptyState('No games found', 'There are no games in this category yet.'));
+  // Запрос успешен, но игр по выбранным фильтрам нет -- баннер
+  // "Data Not Found" в области списка (визуально отличается от ошибки),
+  // пагинация при этом остаётся: страница 1 и неактивные стрелки.
+  function showEmpty(onReset: () => void): void {
+    showStatus(
+      createEmptyState('Data Not Found', 'No games match the selected filters.', {
+        label: 'Reset filters',
+        onClick: onReset,
+      }),
+    );
     pageState = { page: 1, totalPages: 1 };
     pagination.hidden = false;
     renderPagination(true);
