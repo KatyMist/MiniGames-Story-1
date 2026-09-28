@@ -67,6 +67,9 @@ const RAIL_GAP_PX = 8;
 // (см. handleCardOpen), длиннее -- сменой слайда.
 const SWIPE_THRESHOLD_PX = 40;
 
+// Минимальная ширина карточки, на которой показывается подпись.
+const INFO_MIN_CARD_WIDTH_PX = 288;
+
 // Автопрокрутка -- по заданию каждые 4 секунды.
 const AUTOPLAY_INTERVAL_MS = 4000;
 
@@ -318,6 +321,9 @@ export function createNewGames(): HTMLElement {
       // такой узкой карточке прячем совсем, а не обрезаем/переносим.
       const isPeek = distance >= widthScale.length - 1;
       card.classList.toggle('new-games__card--peek', isPeek);
+      // По заданию подпись (название, рейтинг, лайки) видна только на
+      // карточках шириной от 288px; более узкие -- только картинка.
+      card.classList.toggle('new-games__card--no-info', width < INFO_MIN_CARD_WIDTH_PX);
 
       // На "peek"-ширине показываем заранее обрезанную картинку (см.
       // комментарий у peekImageUrl в GameCard) — избегаем экстремального
@@ -380,21 +386,27 @@ export function createNewGames(): HTMLElement {
     render();
   }
 
-  let autoplayTimer: ReturnType<typeof setInterval> | undefined;
+  // Автопрокрутка -- цепочка setTimeout, а не setInterval: так можно
+  // поставить таймер на паузу и продолжить с оставшегося времени.
+  let autoplayTimer: ReturnType<typeof setTimeout> | undefined;
+  let nextTickAt = 0;
+  let pausedRemaining: number | undefined;
   let isReady = false;
 
   function stopAutoplay(): void {
     if (autoplayTimer !== undefined) {
-      clearInterval(autoplayTimer);
+      clearTimeout(autoplayTimer);
       autoplayTimer = undefined;
     }
   }
 
-  function startAutoplay(): void {
+  function startAutoplay(delay: number = AUTOPLAY_INTERVAL_MS): void {
     stopAutoplay();
+    pausedRemaining = undefined;
     // Пока данные не загружены (скелетон/ошибка), лента не крутится.
     if (!isReady || cards.length < 2) return;
-    autoplayTimer = setInterval(() => {
+    nextTickAt = Date.now() + delay;
+    autoplayTimer = setTimeout(() => {
       // Секцию убрали со страницы (переход на другой маршрут) -- таймер
       // больше не нужен.
       if (!section.isConnected) {
@@ -402,7 +414,16 @@ export function createNewGames(): HTMLElement {
         return;
       }
       goToNext();
-    }, AUTOPLAY_INTERVAL_MS);
+      startAutoplay();
+    }, delay);
+  }
+
+  // Нажатие и удержание карусели -- пауза: запоминаем, сколько оставалось
+  // до следующего автоматического шага.
+  function pauseAutoplay(): void {
+    if (autoplayTimer === undefined) return;
+    pausedRemaining = Math.max(0, nextTickAt - Date.now());
+    stopAutoplay();
   }
 
   prevButton.addEventListener('click', () => {
@@ -429,7 +450,7 @@ export function createNewGames(): HTMLElement {
     pointerStartX = event.clientX;
     dragDistance = 0;
     // Пауза на нажатии -- по заданию.
-    stopAutoplay();
+    pauseAutoplay();
   });
 
   track.addEventListener('pointermove', (event) => {
@@ -451,14 +472,14 @@ export function createNewGames(): HTMLElement {
       } else {
         goToPrev();
       }
+      // Свайп после нажатия -- таймер сбрасывается, новый отсчёт 4 секунды.
+      startAutoplay();
+      return;
     }
 
-    // Возобновление на отпускании, с чистым (сброшенным) таймером -- по
-    // заданию ("reset-on-swipe-after-press"): startAutoplay() ниже сама
-    // сначала останавливает предыдущий интервал (см. stopAutoplay внутри),
-    // так что таймер в любом случае стартует заново с нуля, а не
-    // продолжает недосчитанный интервал.
-    startAutoplay();
+    // Отпустили без свайпа -- продолжаем с оставшегося времени, следующий
+    // автоматический шаг наступит, когда оно истечёт.
+    startAutoplay(pausedRemaining ?? AUTOPLAY_INTERVAL_MS);
   }
 
   track.addEventListener('pointerup', finishPointerInteraction);
