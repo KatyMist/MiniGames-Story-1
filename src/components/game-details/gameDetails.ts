@@ -1,5 +1,5 @@
 import './game-details.scss';
-import { GAME_DETAILS_CONTENT, type GameComment } from './gameDetailsContent';
+import { createCommentsSection, type CommentsSectionHandle } from './gameComments';
 import {
   createErrorBanner,
   createLoadingRegion,
@@ -184,118 +184,6 @@ function createRecordsSection(records: readonly GameRecord[]): HTMLElement {
   return section;
 }
 
-function createCommentForm(): HTMLFormElement {
-  const form = document.createElement('form');
-  form.className = 'game-details__comment-form';
-  form.noValidate = true;
-
-  const textarea = document.createElement('textarea');
-  textarea.className = 'game-details__comment-input';
-  textarea.placeholder = 'Share your thoughts about this game...';
-  textarea.rows = 1;
-  textarea.setAttribute('aria-label', 'Write a comment');
-
-  // Автоувеличение по контенту до 88px, дальше -- прокрутка внутри поля
-  // (по заданию). scrollHeight после height:auto даёт "естественную"
-  // высоту под текущий текст.
-  const MAX_TEXTAREA_HEIGHT = 88;
-  const autoGrow = (): void => {
-    textarea.style.height = 'auto';
-    const nextHeight = Math.min(textarea.scrollHeight, MAX_TEXTAREA_HEIGHT);
-    textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = textarea.scrollHeight > MAX_TEXTAREA_HEIGHT ? 'auto' : 'hidden';
-  };
-  textarea.addEventListener('input', autoGrow);
-
-  const submitButton = document.createElement('button');
-  submitButton.type = 'submit';
-  submitButton.className = 'btn btn--primary game-details__comment-submit';
-  submitButton.textContent = 'Post';
-
-  // Бэкенда для комментариев нет -- сабмит только гасит перезагрузку
-  // страницы и очищает поле, реальной отправки/сохранения не происходит.
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    textarea.value = '';
-    autoGrow();
-  });
-
-  form.append(textarea, submitButton);
-  return form;
-}
-
-function createCommentLikeButton(initialLikes: number): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'game-details__comment-like';
-  button.setAttribute('aria-pressed', 'false');
-
-  const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = 'favorite';
-
-  const count = document.createElement('span');
-  count.textContent = String(initialLikes);
-
-  button.append(icon, count);
-
-  // Каждая кнопка лайка переключается независимо от остальных -- состояние
-  // (liked + счётчик) живёт только в замыкании этой конкретной кнопки.
-  let isLiked = false;
-  button.addEventListener('click', () => {
-    isLiked = !isLiked;
-    button.setAttribute('aria-pressed', String(isLiked));
-    button.classList.toggle('game-details__comment-like--active', isLiked);
-    count.textContent = String(isLiked ? initialLikes + 1 : initialLikes);
-  });
-
-  return button;
-}
-
-function createCommentItem(comment: GameComment): HTMLLIElement {
-  const item = document.createElement('li');
-  item.className = 'game-details__comment';
-
-  const avatar = document.createElement('div');
-  avatar.className = 'game-details__comment-avatar';
-  avatar.textContent = comment.author.slice(0, 1).toUpperCase();
-  avatar.setAttribute('aria-hidden', 'true');
-
-  const body = document.createElement('div');
-  body.className = 'game-details__comment-body';
-
-  const author = document.createElement('p');
-  author.className = 'game-details__comment-author';
-  author.textContent = comment.author;
-
-  const text = document.createElement('p');
-  text.className = 'game-details__comment-text';
-  text.textContent = comment.text;
-
-  body.append(author, text);
-  item.append(avatar, body, createCommentLikeButton(comment.likes));
-
-  return item;
-}
-
-function createCommentsSection(): HTMLElement {
-  const section = document.createElement('section');
-  section.className = 'game-details__comments';
-  section.setAttribute('aria-label', 'Comments');
-
-  const heading = document.createElement('h3');
-  heading.className = 'game-details__section-heading';
-  heading.textContent = 'Comments';
-
-  const list = document.createElement('ul');
-  list.className = 'game-details__comments-list';
-  list.append(...GAME_DETAILS_CONTENT.comments.map((comment) => createCommentItem(comment)));
-
-  section.append(heading, createCommentForm(), list);
-  return section;
-}
-
 // Скелетон тела диалога: заголовок, бейджи, описание и строки рекордов.
 function createBodySkeleton(): HTMLElement {
   const info = document.createElement('div');
@@ -357,6 +245,7 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   let isOpen = false;
   let currentSlug = '';
   let controller: AbortController | undefined;
+  let comments: CommentsSectionHandle | undefined;
   let hasFailed = false;
 
   // Обложка игры (media). Реальной hero-картинки с бэкенда во фронтенде
@@ -400,10 +289,12 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   function showGame(game: GameDetails): void {
     hero.classList.remove('game-details__hero--loading');
     renderHero(game.name, game.slug);
+    // Комментарии -- отдельный запрос со своими состояниями загрузки/ошибки.
+    comments = createCommentsSection(game.slug);
     body.replaceChildren(
       createInfoSection(game),
       createRecordsSection(game.topRecords),
-      createCommentsSection(),
+      comments.element,
     );
     setLabel(true);
   }
@@ -415,8 +306,14 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
     body.replaceChildren(content);
   }
 
-  async function load(slug: string): Promise<void> {
+  function abortRequests(): void {
     controller?.abort();
+    comments?.abort();
+    comments = undefined;
+  }
+
+  async function load(slug: string): Promise<void> {
+    abortRequests();
     controller = new AbortController();
     const { signal } = controller;
 
@@ -459,7 +356,7 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
     if (!isOpen) return;
     isOpen = false;
     currentSlug = '';
-    controller?.abort();
+    abortRequests();
     root.classList.remove('game-details--open');
     document.body.style.removeProperty('overflow');
   };
