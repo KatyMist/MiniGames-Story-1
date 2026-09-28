@@ -1,9 +1,9 @@
 import { createLibraryHeader } from '../library-header/libraryHeader';
 import { createLibraryFilters } from '../library-filters/libraryFilters';
 import { createLibraryResults, toLibraryCard } from '../library-results/libraryResults';
-import { createGameDetails } from '../game-details/gameDetails';
 import { showSnackbar } from '../snackbar/snackbar';
 import { getRoute, navigate, subscribe, updateQuery, type RouteState } from '../../app/router';
+import { openGameDetails } from '../../app/navigation';
 import {
   ApiError,
   fetchCategories,
@@ -44,16 +44,14 @@ function resetFilters(): void {
   navigate('/library');
 }
 
-// Собирает страницу библиотеки: заголовок + фильтры + результаты + диалог
-// Game Details. Состояние фильтров и пагинации хранится только в URL
+// Собирает страницу библиотеки: заголовок + фильтры + результаты. Кнопка
+// Details открывает общий диалог Game Details (через ?game=<slug> в URL). Состояние фильтров и пагинации хранится только в URL
 // (/library?category=puzzle&sort=rating-desc&page=2): клик меняет URL,
 // а уже изменение URL запускает запрос GET /api/games с этими параметрами --
 // фильтрация, сортировка и пагинация всегда выполняются на сервере.
 export function createLibraryPage(): HTMLElement[] {
-  const gameDetails = createGameDetails();
-
   const results = createLibraryResults({
-    onDetailsClick: () => gameDetails.open(),
+    onDetailsClick: openGameDetails,
     onPageChange: (page) => {
       updateQuery({ page });
       filters.element.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -220,5 +218,5 @@ export function createLibraryPage(): HTMLElement[] {
 
   void syncWithUrl(getRoute());
 
-  return [header, filters.element, results.element, gameDetails.element];
+  return [header, filters.element, results.element];
 }

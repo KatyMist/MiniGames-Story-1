@@ -7,6 +7,7 @@ import { createGameDeveloper } from './components/game-developer/gameDeveloper';
 import { createFooter } from './components/footer/footer';
 import { createLibraryPage } from './components/library-page/libraryPage';
 import { createAuthDialog, type AuthMode } from './components/auth-dialog/authDialog';
+import { createGameDetails } from './components/game-details/gameDetails';
 import {
   closeDialog,
   getRoute,
@@ -16,6 +17,7 @@ import {
   type PageName,
   type RouteState,
 } from './app/router';
+import { openAuth } from './app/navigation';
 
 function renderHomePage(main: HTMLElement): void {
   main.append(createHero(), createNewGames(), createLeaderboard(), createGameDeveloper());
@@ -41,13 +43,6 @@ function isAuthMode(value: string | null): value is AuthMode {
   return value === 'login' || value === 'register';
 }
 
-// Открытие диалога авторизации -- это смена URL (?auth=...), а сам диалог
-// откроет подписчик роутера. Отдельная запись истории (dialog: true) --
-// чтобы Back закрывал диалог, а не уводил со страницы.
-function openAuth(mode: AuthMode): void {
-  updateQuery({ auth: mode }, { dialog: true });
-}
-
 function mountApp(): void {
   startRouter();
 
@@ -60,6 +55,11 @@ function mountApp(): void {
   const authDialog = createAuthDialog({
     onDismiss: () => closeDialog('auth'),
     onModeChange: (mode) => updateQuery({ auth: mode }, { replace: true }),
+  });
+
+  // Game Details: ?game=<slug> (например /library?category=arcade&page=2&game=palia).
+  const gameDetails = createGameDetails({
+    onDismiss: () => closeDialog('game'),
   });
 
   function renderPage(route: RouteState): void {
@@ -78,10 +78,24 @@ function mountApp(): void {
       }
     }
 
-    root.replaceChildren(createHeader(openAuth), main, createFooter(), authDialog.element);
+    root.replaceChildren(
+      createHeader(openAuth),
+      main,
+      createFooter(),
+      gameDetails.element,
+      authDialog.element,
+    );
   }
 
   function syncDialogs(route: RouteState): void {
+    const game = route.query.get('game');
+
+    if (game) {
+      gameDetails.open(game);
+    } else {
+      gameDetails.close();
+    }
+
     const auth = route.query.get('auth');
 
     if (isAuthMode(auth)) {
