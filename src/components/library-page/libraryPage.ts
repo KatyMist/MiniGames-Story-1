@@ -123,7 +123,7 @@ export function createLibraryPage(): HTMLElement[] {
           resetFilters,
         );
       } else if (response.data.length === 0) {
-        results.showEmpty();
+        results.showEmpty(resetFilters);
       } else {
         results.showGames(
           response.data.map((game) => toLibraryCard(game, getCategoryLabel(game.category))),
