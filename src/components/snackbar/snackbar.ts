@@ -23,7 +23,7 @@ let container: HTMLDivElement | undefined;
 // Один общий контейнер на всё приложение. Он не перекрывает страницу
 // (pointer-events: none, кликабельны только сами уведомления), поэтому
 // Snackbar никогда не блокирует навигацию, прокрутку и другие элементы --
-// в отличие от alert()/confirm(), которые в проекте не используются.
+// в отличие от стандартных модальных окон браузера (в проекте их нет).
 function getContainer(): HTMLDivElement {
   if (container?.isConnected) return container;
 
