@@ -19,6 +19,7 @@ import {
   type RouteState,
 } from './app/router';
 import { openAuth } from './app/navigation';
+import { checkSession, initSession } from './app/authStore';
 
 function renderHomePage(main: HTMLElement): void {
   main.append(createHero(), createNewGames(), createLeaderboard(), createGameDeveloper());
@@ -45,6 +46,10 @@ function isAuthMode(value: string | null): value is AuthMode {
 }
 
 function mountApp(): void {
+  // Сессия приложения проверяется до первого рендера: действующая
+  // восстанавливается, просроченная или повреждённая сбрасывается в гостя.
+  // Выход из Firebase подключается вместе с SDK (RSS-QS-4-1-3).
+  initSession({ signOut: () => Promise.resolve() });
   startRouter();
 
   const root = document.createElement('div');
@@ -114,6 +119,10 @@ function mountApp(): void {
   // query-параметров (фильтры, диалоги) обрабатывается подписчиками самих
   // страниц/диалогов без перерисовки всего приложения.
   subscribe((route, previous) => {
+    // Перед любой навигацией (страница или диалог) проверяем срок сессии:
+    // если она истекла, переход продолжается уже в гостевом режиме.
+    checkSession();
+
     if (!previous || previous.path !== route.path) {
       renderPage(route);
     }
