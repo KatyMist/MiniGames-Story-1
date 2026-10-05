@@ -1,4 +1,9 @@
 import './auth-dialog.scss';
+import { showSnackbar } from '../snackbar/snackbar';
+import { loginWithEmail, registerAccount } from '../../app/authActions';
+import { getAuthErrorMessage } from '../../app/authErrors';
+import type { AppSession } from '../../app/session';
+import { getProfileName } from '../../shared/profile';
 import {
   isAuthFormValid,
   validateAuthField,
@@ -17,6 +22,8 @@ export interface AuthDialogOptions {
   onDismiss?: () => void;
   // Переключение Login/Register пользователем (вкладки и ссылки внизу формы).
   onModeChange?: (mode: AuthMode) => void;
+  // Успешная авторизация: сессия уже создана, владелец закрывает диалог.
+  onAuthenticated?: (session: AppSession) => void;
 }
 
 export interface AuthDialogHandle {
@@ -170,6 +177,17 @@ function createGoogleButton(label: string): HTMLButtonElement {
   return button;
 }
 
+// Индикатор загрузки внутри кнопки на время запроса.
+function createSpinner(): HTMLSpanElement {
+  const spinner = document.createElement('span');
+  spinner.className = 'material-symbols-outlined spinner';
+  spinner.translate = false;
+  spinner.setAttribute('aria-hidden', 'true');
+  spinner.textContent = 'progress_activity';
+
+  return spinner;
+}
+
 function createSubmitButton(label: string): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'submit';
@@ -294,7 +312,14 @@ interface AuthFormView {
   fields: AuthField[];
   submitButton: HTMLButtonElement;
   googleButton: HTMLButtonElement;
+  formError: HTMLParagraphElement;
   getValues: () => AuthFormValues;
+  updateSubmitState: () => void;
+}
+
+interface AuthFormHandlers {
+  onSwitchMode: () => void;
+  onSubmit: (values: AuthFormValues) => void;
 }
 
 function showFieldError(field: AuthField, message: string): void {
@@ -306,7 +331,7 @@ function showFieldError(field: AuthField, message: string): void {
 // Форма текущего режима с валидацией "на лету": поле проверяется при
 // вводе (input) и при уходе с него (blur), кнопка отправки активна только
 // когда валидны все поля режима.
-function createAuthForm(mode: AuthMode, onSwitchMode: () => void): AuthFormView {
+function createAuthForm(mode: AuthMode, handlers: AuthFormHandlers): AuthFormView {
   const copy = FORM_COPY[mode];
 
   const form = document.createElement('form');
@@ -320,6 +345,11 @@ function createAuthForm(mode: AuthMode, onSwitchMode: () => void): AuthFormView 
   const subtitle = document.createElement('p');
   subtitle.className = 'auth-dialog__subtitle';
   subtitle.textContent = copy.subtitle;
+
+  // Общая ошибка формы (ответ Firebase), в отличие от ошибок полей.
+  const formError = document.createElement('p');
+  formError.className = 'auth-dialog__form-error';
+  formError.setAttribute('role', 'alert');
 
   const fields = mode === 'login' ? createLoginFields() : createRegisterFields();
   const submitButton = createSubmitButton(copy.submitLabel);
@@ -361,15 +391,18 @@ function createAuthForm(mode: AuthMode, onSwitchMode: () => void): AuthFormView 
 
   // Отправка невалидной формы невозможна (кнопка disabled), но Enter в
   // поле всё равно вызывает submit -- в этом случае просто подсвечиваем
-  // все ошибки.
+  // все ошибки и запрос не отправляем.
   form.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    const errors = validateAuthForm(mode, getValues());
+    const values = getValues();
+    const errors = validateAuthForm(mode, values);
     for (const field of fields) {
       field.touched = true;
       showFieldError(field, errors[field.name] ?? '');
     }
+
+    if (Object.keys(errors).length === 0) handlers.onSubmit(values);
   });
 
   const extras: HTMLElement[] = [];
@@ -385,17 +418,18 @@ function createAuthForm(mode: AuthMode, onSwitchMode: () => void): AuthFormView 
   form.append(
     heading,
     subtitle,
+    formError,
     ...fields.map((field) => field.element),
     ...extras,
     submitButton,
     createDivider(),
     googleButton,
-    createSwitchRow(copy.switchText, copy.switchLabel, onSwitchMode),
+    createSwitchRow(copy.switchText, copy.switchLabel, handlers.onSwitchMode),
   );
 
   updateSubmitState();
 
-  return { form, fields, submitButton, googleButton, getValues };
+  return { form, fields, submitButton, googleButton, formError, getValues, updateSubmitState };
 }
 
 export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHandle {
@@ -441,6 +475,75 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
   let isOpen = false;
   let mode: AuthMode = 'login';
+  let isPending = false;
+  let view: AuthFormView | undefined;
+
+  // Пока запрос авторизации в процессе, заблокированы все поля и кнопки
+  // диалога (вкладки, отправка, Google, переключатели, крестик) -- второй
+  // запрос запустить нельзя, а закрыть диалог -- тоже.
+  function setPending(pending: boolean): void {
+    isPending = pending;
+    root.classList.toggle('auth-dialog--pending', pending);
+    panel.setAttribute('aria-busy', String(pending));
+
+    for (const control of panel.querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+      'input, button',
+    )) {
+      control.disabled = pending;
+    }
+
+    if (!pending) view?.updateSubmitState();
+  }
+
+  async function authenticate(
+    request: () => Promise<AppSession>,
+    activeButton: HTMLButtonElement,
+    pendingLabel: string,
+  ): Promise<void> {
+    if (isPending || !view) return;
+
+    const currentView = view;
+    const originalContent = [...activeButton.childNodes];
+    const finish = (): void => {
+      activeButton.replaceChildren(...originalContent);
+      setPending(false);
+    };
+
+    currentView.formError.textContent = '';
+    activeButton.replaceChildren(createSpinner(), document.createTextNode(pendingLabel));
+    setPending(true);
+
+    try {
+      const session = await request();
+      finish();
+      showSnackbar(`Welcome, ${getProfileName(session)}!`, { variant: 'success' });
+      if (isOpen) options.onAuthenticated?.(session);
+    } catch (error) {
+      // Ошибка: диалог остаётся открытым, контролы разблокируются, можно
+      // повторить попытку.
+      finish();
+      const message = getAuthErrorMessage(error);
+      currentView.formError.textContent = message;
+      showSnackbar(message, { variant: 'error' });
+    }
+  }
+
+  function submitForm(values: AuthFormValues): void {
+    if (!view) return;
+
+    const email = values.email ?? '';
+    const password = values.password ?? '';
+
+    if (mode === 'login') {
+      void authenticate(() => loginWithEmail(email, password), view.submitButton, 'Logging in…');
+    } else {
+      void authenticate(
+        () => registerAccount(values.username ?? '', email, password),
+        view.submitButton,
+        'Creating account…',
+      );
+    }
+  }
 
   const renderMode = (): void => {
     content.replaceChildren();
@@ -454,7 +557,10 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
     // Каждый режим получает новую форму: при переключении Login/Register
     // поля и ошибки валидации очищаются.
-    const view = createAuthForm(mode, () => selectMode(isLogin ? 'register' : 'login'));
+    view = createAuthForm(mode, {
+      onSwitchMode: () => selectMode(isLogin ? 'register' : 'login'),
+      onSubmit: submitForm,
+    });
     content.append(view.form);
   };
 
@@ -483,6 +589,9 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
   const open = (requestedMode: AuthMode): void => {
     if (isOpen && requestedMode === mode) return;
+    // Во время запроса форму не пересоздаём (например, при Back/Forward
+    // между ?auth=login и ?auth=register).
+    if (isOpen && isPending) return;
     isOpen = true;
     setMode(requestedMode);
     root.classList.add('auth-dialog--open');
@@ -490,7 +599,7 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
   };
 
   const dismiss = (): void => {
-    if (!isOpen) return;
+    if (!isOpen || isPending) return;
 
     if (options.onDismiss) {
       options.onDismiss();
