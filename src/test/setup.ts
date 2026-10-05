@@ -7,7 +7,7 @@ function noop(): void {
 
 // jsdom не реализует matchMedia и scrollTo -- компоненты (мобильное меню,
 // карусель, роутер) их вызывают, поэтому даём минимальные заглушки.
-if (!('matchMedia' in window)) {
+if (typeof window.matchMedia !== 'function') {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string): Partial<MediaQueryList> => ({
@@ -20,6 +20,17 @@ if (!('matchMedia' in window)) {
 }
 
 window.scrollTo = noop;
+Element.prototype.scrollIntoView = noop;
+
+// ResizeObserver (карусель New Games) в jsdom тоже отсутствует.
+if (typeof window.ResizeObserver !== 'function') {
+  class ResizeObserverStub {
+    observe = noop;
+    unobserve = noop;
+    disconnect = noop;
+  }
+  Object.defineProperty(window, 'ResizeObserver', { writable: true, value: ResizeObserverStub });
+}
 
 afterEach(() => {
   document.body.replaceChildren();
