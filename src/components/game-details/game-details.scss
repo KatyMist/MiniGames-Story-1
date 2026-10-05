@@ -317,6 +317,33 @@
   margin-bottom: utils.space('3');
 }
 
+.game-details__comment-field {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: utils.space('05');
+  min-width: 0;
+}
+
+.game-details__comment-form-avatar {
+  align-self: flex-start;
+  margin-top: utils.space('05');
+}
+
+.game-details__comment-status {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: utils.color('on-bg');
+
+  &:empty {
+    display: none;
+  }
+}
+
+.game-details__comment-status--error {
+  color: utils.color('error');
+}
+
 .game-details__comment-input {
   flex: 1 1 auto;
   min-height: 40px;
@@ -338,10 +365,20 @@
     outline: 2px solid utils.color('primary');
     outline-offset: 2px;
   }
+
+  &:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+  }
 }
 
 .game-details__comment-submit {
   flex-shrink: 0;
+  gap: utils.space('05');
+
+  &:disabled {
+    opacity: var(--opacity-disabled);
+  }
 }
 
 .game-details__comments-list {
