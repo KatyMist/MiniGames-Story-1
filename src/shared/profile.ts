@@ -67,9 +67,9 @@ export function getCommentAuthorName(profile: ProfileSource): string {
 }
 
 // Буква в аватаре комментария: первый непробельный символ имени в
-// верхнем регистре (Array.from -- чтобы не разрезать эмодзи/суррогаты).
+// верхнем регистре (spread по символам -- чтобы не разрезать эмодзи/суррогаты).
 export function getAvatarLetter(name: string): string {
-  const [first = ''] = Array.from(name.trim());
+  const [first = ''] = [...name.trim()];
 
   return first.toUpperCase();
 }
