@@ -411,6 +411,12 @@
   color: utils.color('on-primary');
 }
 
+@for $tone from 1 through 5 {
+  .game-details__comment-avatar--tone-#{$tone} {
+    background: utils.color('avatar-random-#{$tone}');
+  }
+}
+
 .game-details__comment-body {
   flex: 1 1 auto;
   min-width: 0;
