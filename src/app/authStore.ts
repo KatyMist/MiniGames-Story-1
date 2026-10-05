@@ -8,6 +8,7 @@
 
 import { showSnackbar } from '../components/snackbar/snackbar';
 import {
+  SESSION_STORAGE_KEY,
   clearStoredSession,
   createSession,
   getSessionExpiresAt,
@@ -161,6 +162,12 @@ function handleVisibilityChange(): void {
   if (document.visibilityState === 'visible') checkSession();
 }
 
+// Вход/выход в другой вкладке меняет тот же ключ localStorage -- эта
+// вкладка сразу подхватывает новое состояние.
+function handleStorage(event: StorageEvent): void {
+  if (event.key === SESSION_STORAGE_KEY || event.key === null) checkSession();
+}
+
 // Старт приложения: восстанавливаем ещё действующую сессию (не меняя
 // authenticatedAt), просроченную/битую -- удаляем и начинаем гостем.
 export function initSession(options: SessionStoreOptions): AppSession | undefined {
@@ -168,6 +175,8 @@ export function initSession(options: SessionStoreOptions): AppSession | undefine
 
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('storage', handleStorage);
+  window.addEventListener('storage', handleStorage);
 
   return checkSession();
 }
