@@ -459,6 +459,10 @@
   }
 }
 
+.game-details__comment-like:disabled {
+  cursor: progress;
+}
+
 .game-details__comment-like--active {
   color: utils.color('like');
 
@@ -537,11 +541,6 @@
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-xs);
   color: utils.color('on-bg');
-}
-
-// Лайки комментария в Story 3 -- только счётчик (без клика).
-span.game-details__comment-like {
-  cursor: default;
 }
 
 .game-details__comments-content {

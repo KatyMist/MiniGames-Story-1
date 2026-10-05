@@ -6,6 +6,7 @@ import {
 } from '../feedback/feedback';
 import { showSnackbar } from '../snackbar/snackbar';
 import { createCommentForm } from './commentForm';
+import { createCommentLikeButton } from './commentLikeButton';
 import { getSession } from '../../app/authStore';
 import { fetchGameComments, isAbortError, type GameComment } from '../../shared/api';
 import { formatRelativeTime } from '../../shared/format';
@@ -24,26 +25,6 @@ export interface CommentsSectionHandle {
 }
 
 const SKELETON_COMMENT_COUNT = 3;
-
-// Счётчик лайков -- только отображение (лайк -- авторизованная операция).
-function createCommentLikes(likes: number): HTMLSpanElement {
-  const wrapper = document.createElement('span');
-  wrapper.className = 'game-details__comment-like';
-  wrapper.setAttribute('aria-label', `${likes} likes`);
-
-  const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined';
-  icon.translate = false;
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = 'favorite';
-
-  const count = document.createElement('span');
-  count.setAttribute('aria-hidden', 'true');
-  count.textContent = String(likes);
-
-  wrapper.append(icon, count);
-  return wrapper;
-}
 
 function createCommentItem(comment: GameComment, tones: AvatarToneRegistry): HTMLLIElement {
   const item = document.createElement('li');
@@ -81,7 +62,7 @@ function createCommentItem(comment: GameComment, tones: AvatarToneRegistry): HTM
   text.textContent = comment.text;
 
   body.append(meta, text);
-  item.append(avatar, body, createCommentLikes(comment.likesCount));
+  item.append(avatar, body, createCommentLikeButton(comment));
 
   return item;
 }
