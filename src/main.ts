@@ -62,6 +62,9 @@ function mountApp(): void {
   const authDialog = createAuthDialog({
     onDismiss: () => closeDialog('auth'),
     onModeChange: (mode) => updateQuery({ auth: mode }, { replace: true }),
+    // После входа диалог закрывается тем же путём, что и крестиком: если
+    // он перекрывал Game Details, тот вернётся уже в авторизованном режиме.
+    onAuthenticated: () => closeDialog('auth'),
   });
 
   // Game Details: ?game=<slug> (например /library?category=arcade&page=2&game=palia).
