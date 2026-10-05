@@ -49,8 +49,8 @@ export default tseslint.config(
   },
   {
     // В тестах null -- реальные значения внешних API (Firebase User,
-    // localStorage.getItem), которые нужно подставлять в моки.
-    files: ['src/**/*.test.ts'],
+    // localStorage.getItem), которые нужно подставлять в моки и заглушки.
+    files: ['src/**/*.test.ts', 'src/test/**/*.ts'],
     rules: {
       'unicorn/no-null': 'off',
     },
