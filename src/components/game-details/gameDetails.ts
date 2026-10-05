@@ -1,5 +1,7 @@
 import './game-details.scss';
 import { createCommentsSection, type CommentsSectionHandle } from './gameComments';
+import { createFavoriteButton, type FavoriteButtonHandle } from './favoriteButton';
+import { getSession, subscribeSession } from '../../app/authStore';
 import {
   createErrorBanner,
   createLoadingRegion,
@@ -63,10 +65,8 @@ function createInfoChip(label: string): HTMLSpanElement {
 }
 
 // Play Now -- по заданию no-op (нет реального геймплея). Add to Favorites
-// переключает состояние (aria-pressed + смена подписи/иконки), но никуда
-// не сохраняется -- сбрасывается при следующем открытии диалога
-// (избранное через API -- Story 4).
-function createActions(): HTMLDivElement {
+// -- переключатель избранного через API (см. favoriteButton.ts).
+function createActions(favorite: FavoriteButtonHandle): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'game-details__actions';
 
@@ -75,35 +75,16 @@ function createActions(): HTMLDivElement {
   playButton.className = 'btn btn--primary btn--lg game-details__play';
   playButton.textContent = 'Play Now';
 
-  const favoriteButton = document.createElement('button');
-  favoriteButton.type = 'button';
-  favoriteButton.className = 'btn btn--outline btn--lg game-details__favorite';
-  favoriteButton.setAttribute('aria-pressed', 'false');
-
-  const favoriteIcon = document.createElement('span');
-  favoriteIcon.className = 'material-symbols-outlined';
-  favoriteIcon.translate = false;
-  favoriteIcon.setAttribute('aria-hidden', 'true');
-  favoriteIcon.textContent = 'favorite';
-
-  const favoriteLabel = document.createElement('span');
-  favoriteLabel.textContent = 'Add to Favorites';
-
-  favoriteButton.append(favoriteIcon, favoriteLabel);
-
-  let isFavorite = false;
-  favoriteButton.addEventListener('click', () => {
-    isFavorite = !isFavorite;
-    favoriteButton.setAttribute('aria-pressed', String(isFavorite));
-    favoriteButton.classList.toggle('game-details__favorite--active', isFavorite);
-    favoriteLabel.textContent = isFavorite ? 'Added to Favorites' : 'Add to Favorites';
-  });
-
-  actions.append(playButton, favoriteButton);
+  actions.append(playButton, favorite.element);
   return actions;
 }
 
-function createInfoSection(game: GameDetails): HTMLElement {
+interface InfoSectionParts {
+  element: HTMLElement;
+  likesValue: HTMLElement;
+}
+
+function createInfoSection(game: GameDetails, favorite: FavoriteButtonHandle): InfoSectionParts {
   const section = document.createElement('div');
   section.className = 'game-details__info';
 
@@ -117,10 +98,12 @@ function createInfoSection(game: GameDetails): HTMLElement {
 
   const stats = document.createElement('div');
   stats.className = 'game-details__stats';
-  stats.append(
-    createStat('star', 'game-details__stat--rating', game.rating.toFixed(1)),
-    createStat('favorite', 'game-details__stat--likes', formatCompactNumber(game.likesCount)),
+  const likes = createStat(
+    'favorite',
+    'game-details__stat--likes',
+    formatCompactNumber(game.likesCount),
   );
+  stats.append(createStat('star', 'game-details__stat--rating', game.rating.toFixed(1)), likes);
 
   titleRow.append(title, stats);
 
@@ -137,8 +120,12 @@ function createInfoSection(game: GameDetails): HTMLElement {
   description.className = 'game-details__description';
   description.textContent = game.fullDescription;
 
-  section.append(titleRow, chips, description, createActions());
-  return section;
+  section.append(titleRow, chips, description, createActions(favorite));
+
+  return {
+    element: section,
+    likesValue: likes.querySelector<HTMLElement>('.game-details__stat-value') ?? likes,
+  };
 }
 
 // Top Records -- чисто информационный блок (по заданию без интерактива).
@@ -253,6 +240,8 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   let comments: CommentsSectionHandle | undefined;
   let hasFailed = false;
   let isSuspended = false;
+  let favorite: FavoriteButtonHandle | undefined;
+  let userController: AbortController | undefined;
 
   // Обложка игры (media): heroImage из API; если такого файла нет --
   // обложка карточки этой игры; нет и её -- декоративная заглушка
@@ -297,13 +286,20 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   function showGame(game: GameDetails): void {
     hero.classList.remove('game-details__hero--loading');
     renderHero(game);
+    // Избранное: у гостя всегда выключено, у авторизованного -- по
+    // isLikedByCurrentUser из персонального ответа API.
+    favorite = createFavoriteButton({
+      slug: game.slug,
+      isFavorited: Boolean(getSession()) && game.isLikedByCurrentUser,
+      onLikesChange: (count) => {
+        info.likesValue.textContent = formatCompactNumber(count);
+      },
+    });
+    const info = createInfoSection(game, favorite);
+
     // Комментарии -- отдельный запрос со своими состояниями загрузки/ошибки.
     comments = createCommentsSection(game.slug);
-    body.replaceChildren(
-      createInfoSection(game),
-      createRecordsSection(game.topRecords),
-      comments.element,
-    );
+    body.replaceChildren(info.element, createRecordsSection(game.topRecords), comments.element);
     setLabel(true);
   }
 
@@ -316,6 +312,8 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
 
   function abortRequests(): void {
     controller?.abort();
+    userController?.abort();
+    favorite = undefined;
     comments?.abort();
     comments = undefined;
   }
@@ -328,7 +326,7 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
     showLoading();
 
     try {
-      const game = await fetchGameDetails(slug, signal);
+      const game = await fetchGameDetails(slug, signal, getSession()?.email);
       showGame(game);
 
       if (hasFailed) {
@@ -400,6 +398,34 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
       close();
     }
   }
+
+  // Вход/выход/истечение сессии при открытом диалоге: публичное
+  // содержимое остаётся, а пользовательское состояние (избранное) берётся
+  // из нового персонального ответа API. У гостя оно сразу сбрасывается.
+  async function refreshUserState(): Promise<void> {
+    const currentFavorite = favorite;
+    if (!isOpen || !currentFavorite) return;
+
+    const email = getSession()?.email;
+    if (!email) currentFavorite.setFavorited(false);
+
+    userController?.abort();
+    userController = new AbortController();
+
+    try {
+      const game = await fetchGameDetails(currentSlug, userController.signal, email);
+      if (favorite === currentFavorite && !currentFavorite.isPending()) {
+        currentFavorite.setFavorited(Boolean(email) && game.isLikedByCurrentUser);
+      }
+    } catch (error) {
+      if (isAbortError(error)) return;
+      showSnackbar('Failed to refresh your favorites state.', { variant: 'error' });
+    }
+  }
+
+  subscribeSession(() => {
+    void refreshUserState();
+  });
 
   closeButton.addEventListener('click', dismiss);
   backdrop.addEventListener('click', dismiss);
