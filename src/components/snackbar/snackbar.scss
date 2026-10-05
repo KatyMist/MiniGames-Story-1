@@ -50,6 +50,10 @@
   box-shadow: 4px 4px 0 0 utils.color('like');
 }
 
+.snackbar--warning {
+  background: utils.color('primary');
+}
+
 .snackbar--info {
   background: utils.color('sky');
 }
