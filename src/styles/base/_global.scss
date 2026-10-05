@@ -55,11 +55,11 @@ button {
 // Индикатор загрузки внутри кнопок (авторизация, избранное, комментарии,
 // лайки): иконка progress_activity, вращающаяся во время запроса.
 .spinner {
-  font-size: 1.2em;
+  font-size: var(--font-size-lg);
   animation: spinner-rotate var(--duration-spin) linear infinite;
 
   @media (prefers-reduced-motion: reduce) {
-    animation-duration: calc(var(--duration-spin) * 4);
+    animation-duration: var(--duration-spin-slow);
   }
 }
 

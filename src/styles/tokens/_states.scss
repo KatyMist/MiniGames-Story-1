@@ -6,4 +6,6 @@ $opacity: (
 
 $durations: (
   'spin': 0.8s,
+  // Для пользователей с prefers-reduced-motion.
+  'spin-slow': 3.2s,
 );
