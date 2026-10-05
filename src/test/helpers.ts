@@ -105,3 +105,24 @@ export function makeCommentsResponse(
 ): CommentsResponse {
   return { data: comments, meta: { totalComments, returnedCount: comments.length } };
 }
+
+// Ввод значения в поле так, как это делает пользователь (событие input).
+export function typeInto(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
+  input.value = value;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+export function getSnackbarMessages(): string[] {
+  return [...document.querySelectorAll('.snackbar:not(.snackbar--leaving) .snackbar__message')].map(
+    (element) => element.textContent ?? '',
+  );
+}
+
+export function query<T extends Element = HTMLElement>(
+  selector: string,
+  root: ParentNode = document,
+): T {
+  const element = root.querySelector<T>(selector);
+  if (!element) throw new Error(`Element not found: ${selector}`);
+  return element;
+}
