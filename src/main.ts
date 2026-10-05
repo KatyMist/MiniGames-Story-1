@@ -19,7 +19,7 @@ import {
   type RouteState,
 } from './app/router';
 import { openAuth } from './app/navigation';
-import { checkSession, initSession } from './app/authStore';
+import { checkSession, endSession, initSession, subscribeSession } from './app/authStore';
 
 function renderHomePage(main: HTMLElement): void {
   main.append(createHero(), createNewGames(), createLeaderboard(), createGameDeveloper());
@@ -68,6 +68,14 @@ function mountApp(): void {
     onDismiss: () => closeDialog('game'),
   });
 
+  const headerOptions = {
+    onAuthRequest: openAuth,
+    onLogout: () => {
+      void endSession('logout');
+    },
+  };
+  let header = createHeader(headerOptions);
+
   function renderPage(route: RouteState): void {
     const main = document.createElement('main');
 
@@ -88,8 +96,10 @@ function mountApp(): void {
       }
     }
 
+    header = createHeader(headerOptions);
+
     root.replaceChildren(
-      createHeader(openAuth),
+      header,
       main,
       createFooter(),
       gameDetails.element,
@@ -127,6 +137,14 @@ function mountApp(): void {
       renderPage(route);
     }
     syncDialogs(route);
+  });
+
+  // Вход, выход и истечение сессии сразу меняют шапку и мобильное меню:
+  // гостевые кнопки <-> профиль пользователя с Log Out.
+  subscribeSession(() => {
+    const nextHeader = createHeader(headerOptions);
+    header.replaceWith(nextHeader);
+    header = nextHeader;
   });
 
   const initialRoute = getRoute();
