@@ -19,6 +19,10 @@ const MESSAGES: Readonly<Record<string, string>> = {
     'An account with this email already exists. Sign in with email and password.',
   'auth/operation-not-allowed': 'This sign-in method is not enabled.',
   'auth/unauthorized-domain': 'Sign-in is not allowed from this domain.',
+  'auth/configuration-not-found':
+    'Authentication is not configured for this project yet. Please try again later.',
+  'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
+    'Authentication is not configured correctly. Please try again later.',
 };
 
 const CANCEL_CODES = new Set([
@@ -38,8 +42,15 @@ export function getAuthErrorCode(error: unknown): string {
   return '';
 }
 
+// Для неизвестных ошибок добавляем код Firebase -- по нему проще понять
+// причину (например, не включён провайдер в консоли Firebase).
 export function getAuthErrorMessage(error: unknown): string {
-  return MESSAGES[getAuthErrorCode(error)] ?? DEFAULT_MESSAGE;
+  const code = getAuthErrorCode(error);
+  const message = MESSAGES[code];
+
+  if (message) return message;
+
+  return code ? `${DEFAULT_MESSAGE} (${code})` : DEFAULT_MESSAGE;
 }
 
 // Пользователь сам закрыл окно Google -- это не ошибка, а отмена.

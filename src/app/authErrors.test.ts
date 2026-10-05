@@ -17,8 +17,12 @@ describe('auth errors', () => {
     expect(getAuthErrorMessage({ code: 'auth/network-request-failed' })).toMatch(/Network/);
   });
 
-  it('uses a generic message for unknown errors', () => {
+  it('uses a generic message for unknown errors and shows an unknown firebase code', () => {
     expect(getAuthErrorMessage(new Error('x'))).toBe('Authentication failed. Please try again.');
+    expect(getAuthErrorMessage({ code: 'auth/internal-error' })).toBe(
+      'Authentication failed. Please try again. (auth/internal-error)',
+    );
+    expect(getAuthErrorMessage({ code: 'auth/configuration-not-found' })).toMatch(/not configured/);
   });
 
   it('recognizes a closed or canceled google popup', () => {
