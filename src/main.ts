@@ -18,7 +18,7 @@ import {
   type PageName,
   type RouteState,
 } from './app/router';
-import { openAuth } from './app/navigation';
+import { isAuthDialogBlocked, openAuth } from './app/navigation';
 import { signOutFromFirebase } from './app/firebase';
 import { checkSession, endSession, initSession, subscribeSession } from './app/authStore';
 
@@ -107,19 +107,34 @@ function mountApp(): void {
 
   function syncDialogs(route: RouteState): void {
     const game = route.query.get('game');
+    const auth = route.query.get('auth');
+    const authMode = isAuthMode(auth) ? auth : undefined;
 
-    if (game) {
-      gameDetails.open(game);
-    } else {
-      gameDetails.close();
+    // Guard диалога авторизации для любого входа (кнопка, прямая ссылка,
+    // Back/Forward): при активной сессии убираем из URL только параметр
+    // auth (путь, остальные параметры и hash остаются) заменой текущей
+    // записи истории -- без перезагрузки и лишнего шага "Назад".
+    // updateQuery снова вызовет syncDialogs уже без auth.
+    if (authMode && isAuthDialogBlocked()) {
+      updateQuery({ auth: undefined }, { replace: true });
+      return;
     }
 
-    const auth = route.query.get('auth');
-
-    if (isAuthMode(auth)) {
-      authDialog.open(auth);
+    if (authMode) {
+      authDialog.open(authMode);
     } else {
       authDialog.close();
+    }
+
+    // Если Auth открыт поверх Game Details (защищённое действие гостя или
+    // после истечения сессии), Game Details не закрывается, а только
+    // скрывается: его состояние и URL сохраняются, и после закрытия Auth
+    // он появляется снова. Одновременно виден только один диалог.
+    if (game) {
+      gameDetails.open(game);
+      gameDetails.setSuspended(Boolean(authMode));
+    } else {
+      gameDetails.close();
     }
   }
 
