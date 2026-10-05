@@ -287,3 +287,20 @@ export async function toggleFavorite(slug: string, userEmail: string): Promise<F
 
   return response.data;
 }
+
+export interface NewComment {
+  userEmail: string;
+  authorName: string;
+  text: string;
+}
+
+// POST /api/games/{slug}/comments -> 201 с созданным комментарием в data.
+// Общего числа комментариев в ответе нет -- его даёт следующий GET.
+export async function postComment(slug: string, comment: NewComment): Promise<GameComment> {
+  const response = await request<{ data: GameComment }>(
+    `/games/${encodeURIComponent(slug)}/comments`,
+    { method: 'POST', body: comment, timeoutMs: MUTATION_TIMEOUT_MS },
+  );
+
+  return response.data;
+}

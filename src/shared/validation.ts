@@ -135,3 +135,18 @@ export function validateAuthForm(mode: AuthMode, values: AuthFormValues): AuthFo
 export function isAuthFormValid(mode: AuthMode, values: AuthFormValues): boolean {
   return Object.keys(validateAuthForm(mode, values)).length === 0;
 }
+
+export const COMMENT_TEXT_MAX_LENGTH = 500;
+
+// Текст комментария: после trim -- от 1 до 500 символов.
+export function validateCommentText(value: string): string {
+  const text = value.trim();
+
+  if (text === '') return 'Comment cannot be empty.';
+
+  if (text.length > COMMENT_TEXT_MAX_LENGTH) {
+    return `Comment must be ${COMMENT_TEXT_MAX_LENGTH} characters or fewer.`;
+  }
+
+  return '';
+}

@@ -400,7 +400,8 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   }
 
   // Вход/выход/истечение сессии при открытом диалоге: публичное
-  // содержимое остаётся, а пользовательское состояние (избранное) берётся
+  // содержимое остаётся, а пользовательское состояние (избранное, форма
+  // комментария, лайки) берётся
   // из нового персонального ответа API. У гостя оно сразу сбрасывается.
   async function refreshUserState(): Promise<void> {
     const currentFavorite = favorite;
@@ -408,6 +409,9 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
 
     const email = getSession()?.email;
     if (!email) currentFavorite.setFavorited(false);
+
+    // Форма комментария и персональные лайки -- тоже под новую сессию.
+    comments?.refresh();
 
     userController?.abort();
     userController = new AbortController();

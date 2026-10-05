@@ -5,58 +5,23 @@ import {
   createSkeleton,
 } from '../feedback/feedback';
 import { showSnackbar } from '../snackbar/snackbar';
+import { createCommentForm } from './commentForm';
+import { getSession } from '../../app/authStore';
 import { fetchGameComments, isAbortError, type GameComment } from '../../shared/api';
 import { formatRelativeTime } from '../../shared/format';
 
-// Последние комментарии игры: GET /api/games/{slug}/comments?limit=3&sort=newest.
-// Story 3 -- только чтение: публикация и лайки комментариев требуют
-// авторизации и появятся в Story 4.
+// Последние комментарии игры: GET /api/games/{slug}/comments?limit=3&sort=newest
+// (+ &userEmail=... при активной сессии -- для персональных лайков).
+// Над списком -- форма нового комментария (только для авторизованных).
 
 export interface CommentsSectionHandle {
   element: HTMLElement;
   abort: () => void;
+  // Смена сессии: перерисовать форму и перезапросить список.
+  refresh: () => void;
 }
 
 const SKELETON_COMMENT_COUNT = 3;
-
-function createCommentForm(): HTMLFormElement {
-  const form = document.createElement('form');
-  form.className = 'game-details__comment-form';
-  form.noValidate = true;
-
-  const textarea = document.createElement('textarea');
-  textarea.className = 'game-details__comment-input';
-  textarea.placeholder = 'Share your thoughts about this game...';
-  textarea.rows = 1;
-  textarea.setAttribute('aria-label', 'Write a comment');
-
-  // Автоувеличение по контенту до 88px, дальше -- прокрутка внутри поля
-  // (по заданию). scrollHeight после height:auto даёт "естественную"
-  // высоту под текущий текст.
-  const MAX_TEXTAREA_HEIGHT = 88;
-  const autoGrow = (): void => {
-    textarea.style.height = 'auto';
-    const nextHeight = Math.min(textarea.scrollHeight, MAX_TEXTAREA_HEIGHT);
-    textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = textarea.scrollHeight > MAX_TEXTAREA_HEIGHT ? 'auto' : 'hidden';
-  };
-  textarea.addEventListener('input', autoGrow);
-
-  const submitButton = document.createElement('button');
-  submitButton.type = 'submit';
-  submitButton.className = 'btn btn--primary game-details__comment-submit';
-  submitButton.textContent = 'Post';
-
-  // Отправка комментариев -- авторизованная операция (Story 4). Сейчас
-  // только сообщаем об этом через Snackbar, без перезагрузки страницы.
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    showSnackbar('Posting comments will be available after you log in.', { variant: 'info' });
-  });
-
-  form.append(textarea, submitButton);
-  return form;
-}
 
 // Счётчик лайков -- только отображение (лайк -- авторизованная операция).
 function createCommentLikes(likes: number): HTMLSpanElement {
@@ -141,7 +106,16 @@ export function createCommentsSection(slug: string): CommentsSectionHandle {
   const content = document.createElement('div');
   content.className = 'game-details__comments-content';
 
-  section.append(heading, createCommentForm(), content);
+  const form = createCommentForm({
+    slug,
+    // После успешной отправки -- свежие 3 последних комментария и общее
+    // число из meta.totalComments.
+    onPosted: () => {
+      void load();
+    },
+  });
+
+  section.append(heading, form.element, content);
 
   let controller: AbortController | undefined;
   let hasFailed = false;
@@ -160,7 +134,7 @@ export function createCommentsSection(slug: string): CommentsSectionHandle {
     );
 
     try {
-      const response = await fetchGameComments(slug, signal);
+      const response = await fetchGameComments(slug, signal, getSession()?.email);
 
       // Заголовок -- с общим числом комментариев: "Comments (12)".
       heading.textContent = `Comments (${response.meta.totalComments})`;
@@ -201,5 +175,9 @@ export function createCommentsSection(slug: string): CommentsSectionHandle {
   return {
     element: section,
     abort: () => controller?.abort(),
+    refresh: () => {
+      form.refresh();
+      void load();
+    },
   };
 }
