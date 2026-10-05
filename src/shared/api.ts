@@ -288,8 +288,6 @@ export async function toggleFavorite(slug: string, userEmail: string): Promise<F
   return response.data;
 }
 
-export const COMMENT_MAX_LENGTH = 500;
-
 export interface NewComment {
   userEmail: string;
   authorName: string;
