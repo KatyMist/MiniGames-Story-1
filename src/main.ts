@@ -19,6 +19,7 @@ import {
   type RouteState,
 } from './app/router';
 import { openAuth } from './app/navigation';
+import { signOutFromFirebase } from './app/firebase';
 import { checkSession, endSession, initSession, subscribeSession } from './app/authStore';
 
 function renderHomePage(main: HTMLElement): void {
@@ -47,9 +48,9 @@ function isAuthMode(value: string | null): value is AuthMode {
 
 function mountApp(): void {
   // Сессия приложения проверяется до первого рендера: действующая
-  // восстанавливается, просроченная или повреждённая сбрасывается в гостя.
-  // Выход из Firebase подключается вместе с SDK (RSS-QS-4-1-3).
-  initSession({ signOut: () => Promise.resolve() });
+  // восстанавливается, просроченная или повреждённая сбрасывается в гостя
+  // (с выходом из Firebase, чтобы его сохранённый вход не вернул юзера).
+  initSession({ signOut: signOutFromFirebase });
   startRouter();
 
   const root = document.createElement('div');
