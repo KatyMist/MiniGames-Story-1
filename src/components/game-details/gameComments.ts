@@ -9,6 +9,8 @@ import { createCommentForm } from './commentForm';
 import { getSession } from '../../app/authStore';
 import { fetchGameComments, isAbortError, type GameComment } from '../../shared/api';
 import { formatRelativeTime } from '../../shared/format';
+import { createAvatarToneRegistry, type AvatarToneRegistry } from '../../shared/avatarColors';
+import { getAvatarLetter } from '../../shared/profile';
 
 // Последние комментарии игры: GET /api/games/{slug}/comments?limit=3&sort=newest
 // (+ &userEmail=... при активной сессии -- для персональных лайков).
@@ -43,13 +45,15 @@ function createCommentLikes(likes: number): HTMLSpanElement {
   return wrapper;
 }
 
-function createCommentItem(comment: GameComment): HTMLLIElement {
+function createCommentItem(comment: GameComment, tones: AvatarToneRegistry): HTMLLIElement {
   const item = document.createElement('li');
   item.className = 'game-details__comment';
 
   const avatar = document.createElement('div');
-  avatar.className = 'game-details__comment-avatar';
-  avatar.textContent = comment.authorName.slice(0, 1).toUpperCase();
+  // Фон -- случайный токен avatar-random-N, закреплённый за автором;
+  // буква -- первый непробельный символ имени в верхнем регистре.
+  avatar.className = `game-details__comment-avatar game-details__comment-avatar--tone-${tones.getTone(comment.authorName)}`;
+  avatar.textContent = getAvatarLetter(comment.authorName);
   avatar.setAttribute('aria-hidden', 'true');
 
   const body = document.createElement('div');
@@ -119,6 +123,9 @@ export function createCommentsSection(slug: string): CommentsSectionHandle {
 
   let controller: AbortController | undefined;
   let hasFailed = false;
+  // Цвета аватаров живут столько же, сколько список комментариев: при
+  // перезагрузке списка (новый комментарий, вход/выход) они не меняются.
+  const avatarTones = createAvatarToneRegistry();
 
   async function load(): Promise<void> {
     controller?.abort();
@@ -149,7 +156,7 @@ export function createCommentsSection(slug: string): CommentsSectionHandle {
       } else {
         const list = document.createElement('ul');
         list.className = 'game-details__comments-list';
-        list.append(...response.data.map((comment) => createCommentItem(comment)));
+        list.append(...response.data.map((comment) => createCommentItem(comment, avatarTones)));
         content.replaceChildren(list);
       }
 
