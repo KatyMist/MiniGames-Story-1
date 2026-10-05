@@ -18,6 +18,8 @@ $colors: (
   'pink': #f6c8fb,
   'lavender': #e6dff3,
   'like': #ff4b4b,
+  // Ошибки валидации форм (текст и рамка поля).
+  'error': #c62828,
 
   // НАЙДЕНО ПРИ РАБОТЕ НАД БИБЛИОТЕКОЙ: эти 4 токена уже использовались
   // (utils.color(...)) в auth-dialog.scss, mobile-menu.scss и

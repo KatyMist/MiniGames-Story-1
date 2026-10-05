@@ -5,6 +5,7 @@
 @forward 'shadows';
 @forward 'buttons';
 @forward 'breakpoints';
+@forward 'states';
 
 @use 'sass:map';
 @use 'colors';
@@ -13,6 +14,7 @@
 @use 'radius';
 @use 'shadows';
 @use 'buttons';
+@use 'states';
 
 // Токены публикуются как CSS custom properties, чтобы ими можно было
 // пользоваться в обычном CSS/Sass через var(--...), в т.ч. в calc().
@@ -51,6 +53,14 @@
 
   @each $name, $value in buttons.$button-padding-block {
     --button-padding-block-#{$name}: #{$value};
+  }
+
+  @each $name, $value in states.$opacity {
+    --opacity-#{$name}: #{$value};
+  }
+
+  @each $name, $value in states.$durations {
+    --duration-#{$name}: #{$value};
   }
 
   --border-width-default: #{buttons.$border-width-default};

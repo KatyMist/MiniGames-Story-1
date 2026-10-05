@@ -152,6 +152,29 @@
   }
 }
 
+.auth-dialog__field--invalid .auth-dialog__input {
+  border-color: utils.color('error');
+}
+
+// Место под ошибку зарезервировано пустым абзацем: появление сообщения
+// не должно заставлять форму "прыгать" сильнее, чем на одну строку.
+.auth-dialog__error {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: utils.color('error');
+
+  &:empty {
+    display: none;
+  }
+}
+
+.auth-dialog__submit:disabled,
+.auth-dialog__google:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
 .auth-dialog__input--with-toggle {
   padding-right: utils.space('6');
 }
