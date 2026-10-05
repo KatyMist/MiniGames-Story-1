@@ -169,6 +169,35 @@
   }
 }
 
+.auth-dialog__form-error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('error');
+
+  &:empty {
+    display: none;
+  }
+}
+
+.auth-dialog__submit,
+.auth-dialog__google {
+  gap: utils.space('1');
+}
+
+// Во время запроса авторизации блокируются все контролы диалога.
+.auth-dialog--pending {
+  .auth-dialog__tab,
+  .auth-dialog__close,
+  .auth-dialog__switch-link,
+  .auth-dialog__forgot,
+  .auth-dialog__input-toggle,
+  .auth-dialog__input {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+  }
+}
+
 .auth-dialog__submit:disabled,
 .auth-dialog__google:disabled {
   opacity: var(--opacity-disabled);
