@@ -143,3 +143,25 @@ $menu-bg: utils.color('bg-footer-low');
     width: 100%;
   }
 }
+
+// Профиль авторизованного пользователя над кнопкой Log Out.
+.mobile-menu__user {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: utils.space('1');
+}
+
+.mobile-menu__user-name {
+  overflow: hidden;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('white');
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-menu__user-avatar {
+  background-color: utils.color('primary');
+  color: utils.color('on-primary');
+}
