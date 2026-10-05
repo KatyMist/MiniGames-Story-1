@@ -5,10 +5,10 @@
 import type { FirebaseOptions } from 'firebase/app';
 
 export const firebaseConfig: FirebaseOptions = {
-  apiKey: 'PLACEHOLDER_API_KEY',
+  apiKey: 'AIzaSyCR4spMsTHghB145CVccsAbJqcybImuQ9Q',
   authDomain: 'minigames-katymist.firebaseapp.com',
   projectId: 'minigames-katymist',
   storageBucket: 'minigames-katymist.firebasestorage.app',
-  messagingSenderId: 'PLACEHOLDER_SENDER_ID',
-  appId: 'PLACEHOLDER_APP_ID',
+  messagingSenderId: '691708875841',
+  appId: '1:691708875841:web:1e66ca085bb8409d2122c0',
 };
