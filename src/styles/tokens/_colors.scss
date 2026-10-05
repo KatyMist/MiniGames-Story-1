@@ -18,6 +18,8 @@ $colors: (
   'pink': #f6c8fb,
   'lavender': #e6dff3,
   'like': #ff4b4b,
+  // Ошибки валидации форм (текст и рамка поля).
+  'error': #c62828,
 
   // НАЙДЕНО ПРИ РАБОТЕ НАД БИБЛИОТЕКОЙ: эти 4 токена уже использовались
   // (utils.color(...)) в auth-dialog.scss, mobile-menu.scss и
@@ -44,5 +46,13 @@ $colors: (
   // fallback-хекс. Значения сверены с уже задокументированными в footer.scss
   // комментариями/Figma (#1E1B3A фон, #B9B5C9 второстепенный текст).
   'bg-footer': #1e1b3a,
+
+  // Фоны аватаров комментаторов (Figma: avatar-random-*). Цвет выбирается
+  // случайно из этого набора -- см. shared/avatarColors.ts.
+  'avatar-random-1': #b0e0ca,
+  'avatar-random-2': #c4e2fc,
+  'avatar-random-3': #f6c8fb,
+  'avatar-random-4': #e6dff3,
+  'avatar-random-5': #ffe08a,
   'on-bg-footer': #b9b5c9,
 );

@@ -5,7 +5,7 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
   },
   {
     linterOptions: {
@@ -45,6 +45,14 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
+  },
+  {
+    // В тестах null -- реальные значения внешних API (Firebase User,
+    // localStorage.getItem), которые нужно подставлять в моки и заглушки.
+    files: ['src/**/*.test.ts', 'src/test/**/*.ts'],
+    rules: {
+      'unicorn/no-null': 'off',
     },
   },
 );

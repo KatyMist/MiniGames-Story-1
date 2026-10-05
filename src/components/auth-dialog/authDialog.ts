@@ -1,6 +1,19 @@
 import './auth-dialog.scss';
+import { showSnackbar } from '../snackbar/snackbar';
+import { loginWithEmail, loginWithGoogle, registerAccount } from '../../app/authActions';
+import { getAuthErrorMessage, isAuthCancelled } from '../../app/authErrors';
+import type { AppSession } from '../../app/session';
+import { getProfileName } from '../../shared/profile';
+import {
+  isAuthFormValid,
+  validateAuthField,
+  validateAuthForm,
+  type AuthFieldName,
+  type AuthFormValues,
+  type AuthMode,
+} from '../../shared/validation';
 
-export type AuthMode = 'login' | 'register';
+export type { AuthMode } from '../../shared/validation';
 
 export interface AuthDialogOptions {
   // Закрытие действием пользователя (бэкдроп/Escape). Если передано,
@@ -9,6 +22,8 @@ export interface AuthDialogOptions {
   onDismiss?: () => void;
   // Переключение Login/Register пользователем (вкладки и ссылки внизу формы).
   onModeChange?: (mode: AuthMode) => void;
+  // Успешная авторизация: сессия уже создана, владелец закрывает диалог.
+  onAuthenticated?: (session: AppSession) => void;
 }
 
 export interface AuthDialogHandle {
@@ -29,6 +44,7 @@ const GOOGLE_ICON_SVG = `
 `.trim();
 
 interface FieldConfig {
+  name: AuthFieldName;
   id: string;
   label: string;
   type: string;
@@ -37,7 +53,29 @@ interface FieldConfig {
   autocomplete?: HTMLInputElement['autocomplete'];
 }
 
-function createField(config: FieldConfig): HTMLDivElement {
+// Поле формы вместе с элементами, которые нужны валидации: сам input и
+// место под inline-ошибку (связано с input через aria-describedby).
+interface AuthField {
+  name: AuthFieldName;
+  element: HTMLDivElement;
+  input: HTMLInputElement;
+  error: HTMLParagraphElement;
+  // Ошибку показываем только после того, как пользователь начал вводить
+  // значение или покинул поле, -- а не сразу при открытии формы.
+  touched: boolean;
+}
+
+function createInputIcon(name: string): HTMLSpanElement {
+  const icon = document.createElement('span');
+  icon.className = 'material-symbols-outlined auth-dialog__input-icon';
+  icon.translate = false;
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = name;
+
+  return icon;
+}
+
+function createField(config: FieldConfig): AuthField {
   const field = document.createElement('div');
   field.className = 'auth-dialog__field';
 
@@ -48,55 +86,34 @@ function createField(config: FieldConfig): HTMLDivElement {
 
   const wrap = document.createElement('div');
   wrap.className = 'auth-dialog__input-wrap';
-
-  const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined auth-dialog__input-icon';
-  icon.translate = false;
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = config.icon;
 
   const input = document.createElement('input');
   input.className = 'auth-dialog__input';
   input.id = config.id;
-  input.name = config.id;
+  input.name = config.name;
   input.type = config.type;
   input.placeholder = config.placeholder;
+  input.required = true;
   if (config.autocomplete) input.autocomplete = config.autocomplete;
 
-  wrap.append(icon, input);
-  field.append(label, wrap);
+  const error = document.createElement('p');
+  error.className = 'auth-dialog__error';
+  error.id = `${config.id}-error`;
+  input.setAttribute('aria-describedby', error.id);
 
-  return field;
+  wrap.append(createInputIcon(config.icon), input);
+  field.append(label, wrap, error);
+
+  return { name: config.name, element: field, input, error, touched: false };
 }
 
 // Поле пароля с переключателем видимости -- по референсу иконка "глаз"
 // есть только у пароля на форме логина; у Password/Confirm Password на
-// форме регистрации её нет вообще (см. createField с icon: 'lock' там).
-function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDivElement {
-  const field = document.createElement('div');
-  field.className = 'auth-dialog__field';
-
-  const label = document.createElement('label');
-  label.className = 'auth-dialog__label';
-  label.htmlFor = config.id;
-  label.textContent = config.label;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'auth-dialog__input-wrap';
-
-  const icon = document.createElement('span');
-  icon.className = 'material-symbols-outlined auth-dialog__input-icon';
-  icon.translate = false;
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = 'lock';
-
-  const input = document.createElement('input');
-  input.className = 'auth-dialog__input auth-dialog__input--with-toggle';
-  input.id = config.id;
-  input.name = config.id;
-  input.type = 'password';
-  input.placeholder = config.placeholder;
-  if (config.autocomplete) input.autocomplete = config.autocomplete;
+// форме регистрации её нет вообще.
+function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): AuthField {
+  const field = createField({ ...config, type: 'password', icon: 'lock' });
+  const { input } = field;
+  input.classList.add('auth-dialog__input--with-toggle');
 
   const toggle = document.createElement('button');
   toggle.type = 'button';
@@ -117,8 +134,7 @@ function createPasswordField(config: Omit<FieldConfig, 'type' | 'icon'>): HTMLDi
     toggle.setAttribute('aria-label', isCurrentlyHidden ? 'Hide password' : 'Show password');
   });
 
-  wrap.append(icon, input, toggle);
-  field.append(label, wrap);
+  input.after(toggle);
 
   return field;
 }
@@ -142,8 +158,7 @@ function createDivider(): HTMLDivElement {
   return divider;
 }
 
-// OAuth через Google пока не подключен (бэкенда для реальной авторизации
-// нет вообще -- см. src/shared/authState.ts) -- кнопка пока декоративная.
+// Вход через Google (Firebase GoogleAuthProvider, всплывающее окно).
 function createGoogleButton(label: string): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
@@ -159,6 +174,17 @@ function createGoogleButton(label: string): HTMLButtonElement {
   button.append(icon, text);
 
   return button;
+}
+
+// Индикатор загрузки внутри кнопки на время запроса.
+function createSpinner(): HTMLSpanElement {
+  const spinner = document.createElement('span');
+  spinner.className = 'material-symbols-outlined spinner';
+  spinner.translate = false;
+  spinner.setAttribute('aria-hidden', 'true');
+  spinner.textContent = 'progress_activity';
+
+  return spinner;
 }
 
 function createSubmitButton(label: string): HTMLButtonElement {
@@ -190,130 +216,221 @@ function createSwitchRow(
   return row;
 }
 
-function createLoginForm(onSwitchToRegister: () => void): HTMLFormElement {
-  const form = document.createElement('form');
-  form.className = 'auth-dialog__form';
-  form.noValidate = true;
-
-  const heading = document.createElement('h2');
-  heading.className = 'auth-dialog__heading';
-  heading.textContent = 'Welcome Back!';
-
-  const subtitle = document.createElement('p');
-  subtitle.className = 'auth-dialog__subtitle';
-  subtitle.textContent = 'Sign in to resume your games and progress.';
-
-  const email = createField({
-    id: 'login-email',
-    label: 'Email Address',
-    type: 'email',
-    placeholder: 'e.g. alex@minigames.com',
-    icon: 'mail',
-    autocomplete: 'email',
-  });
-
-  const password = createPasswordField({
-    id: 'login-password',
-    label: 'Password',
-    placeholder: '••••••••',
-    autocomplete: 'current-password',
-  });
-
-  const forgot = document.createElement('button');
-  forgot.type = 'button';
-  forgot.className = 'auth-dialog__forgot';
-  forgot.textContent = 'Forgot Password?';
-
-  // Бэкенда для авторизации пока нет (см. src/shared/authState.ts) --
-  // сабмит только гасит перезагрузку страницы, реального логина не
-  // происходит. Восстановление пароля (Forgot Password?) по той же причине
-  // тоже пока декоративное.
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-  });
-
-  form.append(
-    heading,
-    subtitle,
-    email,
-    password,
-    forgot,
-    createSubmitButton('Login'),
-    createDivider(),
-    createGoogleButton('Continue with Google'),
-    createSwitchRow("Don't have an account?", 'Register', onSwitchToRegister),
-  );
-
-  return form;
+interface FormCopy {
+  heading: string;
+  subtitle: string;
+  submitLabel: string;
+  googleLabel: string;
+  switchText: string;
+  switchLabel: string;
 }
 
-function createRegisterForm(onSwitchToLogin: () => void): HTMLFormElement {
+const FORM_COPY: Readonly<Record<AuthMode, FormCopy>> = {
+  login: {
+    heading: 'Welcome Back!',
+    subtitle: 'Sign in to resume your games and progress.',
+    submitLabel: 'Login',
+    googleLabel: 'Continue with Google',
+    switchText: "Don't have an account?",
+    switchLabel: 'Register',
+  },
+  register: {
+    heading: 'Create Account',
+    subtitle: 'Join MiniGames to track your score & streak.',
+    submitLabel: 'Create Account',
+    googleLabel: 'Sign up with Google',
+    switchText: 'Already have an account?',
+    switchLabel: 'Login',
+  },
+};
+
+function createLoginFields(): AuthField[] {
+  return [
+    createField({
+      name: 'email',
+      id: 'login-email',
+      label: 'Email Address',
+      type: 'email',
+      placeholder: 'e.g. alex@minigames.com',
+      icon: 'mail',
+      autocomplete: 'email',
+    }),
+    createPasswordField({
+      name: 'password',
+      id: 'login-password',
+      label: 'Password',
+      placeholder: '••••••••',
+      autocomplete: 'current-password',
+    }),
+  ];
+}
+
+function createRegisterFields(): AuthField[] {
+  return [
+    createField({
+      name: 'username',
+      id: 'register-username',
+      label: 'Username',
+      type: 'text',
+      placeholder: 'e.g. CozyGamer99',
+      icon: 'person',
+      autocomplete: 'username',
+    }),
+    createField({
+      name: 'email',
+      id: 'register-email',
+      label: 'Email Address',
+      type: 'email',
+      placeholder: 'your.email@domain.com',
+      icon: 'mail',
+      autocomplete: 'email',
+    }),
+    createField({
+      name: 'password',
+      id: 'register-password',
+      label: 'Password',
+      type: 'password',
+      placeholder: 'Min. 6 characters',
+      icon: 'lock',
+      autocomplete: 'new-password',
+    }),
+    createField({
+      name: 'confirmPassword',
+      id: 'register-confirm-password',
+      label: 'Confirm Password',
+      type: 'password',
+      placeholder: 'Repeat your password',
+      icon: 'lock',
+      autocomplete: 'new-password',
+    }),
+  ];
+}
+
+interface AuthFormView {
+  form: HTMLFormElement;
+  fields: AuthField[];
+  submitButton: HTMLButtonElement;
+  googleButton: HTMLButtonElement;
+  formError: HTMLParagraphElement;
+  getValues: () => AuthFormValues;
+  updateSubmitState: () => void;
+}
+
+interface AuthFormHandlers {
+  onSwitchMode: () => void;
+  onSubmit: (values: AuthFormValues) => void;
+  onGoogle: (button: HTMLButtonElement) => void;
+}
+
+function showFieldError(field: AuthField, message: string): void {
+  field.error.textContent = message;
+  field.input.setAttribute('aria-invalid', String(Boolean(message)));
+  field.element.classList.toggle('auth-dialog__field--invalid', Boolean(message));
+}
+
+// Форма текущего режима с валидацией "на лету": поле проверяется при
+// вводе (input) и при уходе с него (blur), кнопка отправки активна только
+// когда валидны все поля режима.
+function createAuthForm(mode: AuthMode, handlers: AuthFormHandlers): AuthFormView {
+  const copy = FORM_COPY[mode];
+
   const form = document.createElement('form');
   form.className = 'auth-dialog__form';
   form.noValidate = true;
 
   const heading = document.createElement('h2');
   heading.className = 'auth-dialog__heading';
-  heading.textContent = 'Create Account';
+  heading.textContent = copy.heading;
 
   const subtitle = document.createElement('p');
   subtitle.className = 'auth-dialog__subtitle';
-  subtitle.textContent = 'Join MiniGames to track your score & streak.';
+  subtitle.textContent = copy.subtitle;
 
-  const username = createField({
-    id: 'register-username',
-    label: 'Username',
-    type: 'text',
-    placeholder: 'e.g. CozyGamer_99',
-    icon: 'person',
-    autocomplete: 'username',
-  });
+  // Общая ошибка формы (ответ Firebase), в отличие от ошибок полей.
+  const formError = document.createElement('p');
+  formError.className = 'auth-dialog__form-error';
+  formError.setAttribute('role', 'alert');
 
-  const email = createField({
-    id: 'register-email',
-    label: 'Email Address',
-    type: 'email',
-    placeholder: 'your.email@domain.com',
-    icon: 'mail',
-    autocomplete: 'email',
-  });
+  const fields = mode === 'login' ? createLoginFields() : createRegisterFields();
+  const submitButton = createSubmitButton(copy.submitLabel);
+  const googleButton = createGoogleButton(copy.googleLabel);
+  googleButton.addEventListener('click', () => handlers.onGoogle(googleButton));
 
-  const password = createField({
-    id: 'register-password',
-    label: 'Password',
-    type: 'password',
-    placeholder: 'Min. 8 characters',
-    icon: 'lock',
-    autocomplete: 'new-password',
-  });
+  const getValues = (): AuthFormValues => {
+    const values: AuthFormValues = {};
+    for (const field of fields) values[field.name] = field.input.value;
+    return values;
+  };
 
-  const confirmPassword = createField({
-    id: 'register-confirm-password',
-    label: 'Confirm Password',
-    type: 'password',
-    placeholder: 'Repeat your password',
-    icon: 'lock',
-    autocomplete: 'new-password',
-  });
+  const updateSubmitState = (): void => {
+    submitButton.disabled = !isAuthFormValid(mode, getValues());
+  };
 
+  const validateField = (field: AuthField): void => {
+    if (!field.touched) return;
+    showFieldError(field, validateAuthField(mode, field.name, getValues()));
+  };
+
+  for (const field of fields) {
+    const handleChange = (): void => {
+      field.touched = true;
+      validateField(field);
+
+      // Подтверждение пароля зависит от пароля -- перепроверяем его при
+      // каждом изменении пароля.
+      if (field.name === 'password') {
+        const confirm = fields.find((item) => item.name === 'confirmPassword');
+        if (confirm) validateField(confirm);
+      }
+
+      updateSubmitState();
+    };
+
+    field.input.addEventListener('input', handleChange);
+    field.input.addEventListener('blur', handleChange);
+  }
+
+  // Отправка невалидной формы невозможна (кнопка disabled), но Enter в
+  // поле всё равно вызывает submit -- в этом случае просто подсвечиваем
+  // все ошибки и запрос не отправляем.
   form.addEventListener('submit', (event) => {
     event.preventDefault();
+
+    const values = getValues();
+    const errors = validateAuthForm(mode, values);
+    for (const field of fields) {
+      field.touched = true;
+      showFieldError(field, errors[field.name] ?? '');
+    }
+
+    if (Object.keys(errors).length === 0) handlers.onSubmit(values);
   });
+
+  const extras: HTMLElement[] = [];
+
+  if (mode === 'login') {
+    const forgot = document.createElement('button');
+    forgot.type = 'button';
+    forgot.className = 'auth-dialog__forgot';
+    forgot.textContent = 'Forgot Password?';
+    extras.push(forgot);
+  }
 
   form.append(
     heading,
     subtitle,
-    username,
-    email,
-    password,
-    confirmPassword,
-    createSubmitButton('Create Account'),
+    formError,
+    ...fields.map((field) => field.element),
+    ...extras,
+    submitButton,
     createDivider(),
-    createGoogleButton('Sign up with Google'),
-    createSwitchRow('Already have an account?', 'Login', onSwitchToLogin),
+    googleButton,
+    createSwitchRow(copy.switchText, copy.switchLabel, handlers.onSwitchMode),
   );
 
-  return form;
+  updateSubmitState();
+
+  return { form, fields, submitButton, googleButton, formError, getValues, updateSubmitState };
 }
 
 export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHandle {
@@ -359,6 +476,82 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
   let isOpen = false;
   let mode: AuthMode = 'login';
+  let isPending = false;
+  let view: AuthFormView | undefined;
+
+  // Пока запрос авторизации в процессе, заблокированы все поля и кнопки
+  // диалога (вкладки, отправка, Google, переключатели, крестик) -- второй
+  // запрос запустить нельзя, а закрыть диалог -- тоже.
+  function setPending(pending: boolean): void {
+    isPending = pending;
+    root.classList.toggle('auth-dialog--pending', pending);
+    panel.setAttribute('aria-busy', String(pending));
+
+    for (const control of panel.querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+      'input, button',
+    )) {
+      control.disabled = pending;
+    }
+
+    if (!pending) view?.updateSubmitState();
+  }
+
+  async function authenticate(
+    request: () => Promise<AppSession>,
+    activeButton: HTMLButtonElement,
+    pendingLabel: string,
+  ): Promise<void> {
+    if (isPending || !view) return;
+
+    const currentView = view;
+    const originalContent = [...activeButton.childNodes];
+    const finish = (): void => {
+      activeButton.replaceChildren(...originalContent);
+      setPending(false);
+    };
+
+    currentView.formError.textContent = '';
+    activeButton.replaceChildren(createSpinner(), document.createTextNode(pendingLabel));
+    setPending(true);
+
+    try {
+      const session = await request();
+      finish();
+      showSnackbar(`Welcome, ${getProfileName(session)}!`, { variant: 'success' });
+      if (isOpen) options.onAuthenticated?.(session);
+    } catch (error) {
+      // Ошибка: диалог остаётся открытым, контролы разблокируются, можно
+      // повторить попытку.
+      finish();
+      const message = getAuthErrorMessage(error);
+
+      // Закрытое пользователем окно Google -- отмена, а не ошибка.
+      if (isAuthCancelled(error)) {
+        showSnackbar(message, { variant: 'info' });
+        return;
+      }
+
+      currentView.formError.textContent = message;
+      showSnackbar(message, { variant: 'error' });
+    }
+  }
+
+  function submitForm(values: AuthFormValues): void {
+    if (!view) return;
+
+    const email = values.email ?? '';
+    const password = values.password ?? '';
+
+    if (mode === 'login') {
+      void authenticate(() => loginWithEmail(email, password), view.submitButton, 'Logging in…');
+    } else {
+      void authenticate(
+        () => registerAccount(values.username ?? '', email, password),
+        view.submitButton,
+        'Creating account…',
+      );
+    }
+  }
 
   const renderMode = (): void => {
     content.replaceChildren();
@@ -370,11 +563,16 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
     registerTab.setAttribute('aria-selected', String(!isLogin));
     content.setAttribute('aria-labelledby', isLogin ? loginTab.id : registerTab.id);
 
-    content.append(
-      isLogin
-        ? createLoginForm(() => selectMode('register'))
-        : createRegisterForm(() => selectMode('login')),
-    );
+    // Каждый режим получает новую форму: при переключении Login/Register
+    // поля и ошибки валидации очищаются.
+    view = createAuthForm(mode, {
+      onSwitchMode: () => selectMode(isLogin ? 'register' : 'login'),
+      onSubmit: submitForm,
+      onGoogle: (button) => {
+        void authenticate(loginWithGoogle, button, 'Connecting to Google…');
+      },
+    });
+    content.append(view.form);
   };
 
   const setMode = (nextMode: AuthMode): void => {
@@ -402,6 +600,9 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
 
   const open = (requestedMode: AuthMode): void => {
     if (isOpen && requestedMode === mode) return;
+    // Во время запроса форму не пересоздаём (например, при Back/Forward
+    // между ?auth=login и ?auth=register).
+    if (isOpen && isPending) return;
     isOpen = true;
     setMode(requestedMode);
     root.classList.add('auth-dialog--open');
@@ -409,7 +610,7 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
   };
 
   const dismiss = (): void => {
-    if (!isOpen) return;
+    if (!isOpen || isPending) return;
 
     if (options.onDismiss) {
       options.onDismiss();

@@ -26,6 +26,8 @@ interface NavigateOptions {
   // диалога достаточно history.back(), и пользователь вернётся ровно на
   // URL страницы под диалогом.
   dialog?: boolean;
+  // Фрагмент URL (#...), который нужно сохранить в новом адресе.
+  hash?: string;
 }
 
 interface HistoryMarker {
@@ -113,7 +115,7 @@ export function navigate(
   query?: URLSearchParams,
   options: NavigateOptions = {},
 ): void {
-  const url = toHref(path, query);
+  const url = `${toHref(path, query)}${options.hash ?? ''}`;
   const currentMarker = (window.history.state ?? {}) as HistoryMarker;
   // replace без явного dialog сохраняет метку текущей записи: смена вкладки
   // Login/Register внутри открытого диалога не должна "терять" то, что
@@ -121,7 +123,9 @@ export function navigate(
   const isDialog = options.dialog ?? (options.replace ? Boolean(currentMarker.dialog) : false);
   const marker: HistoryMarker = isDialog ? { dialog: true } : {};
 
-  if (!options.replace && url === `${window.location.pathname}${window.location.search}`) {
+  const { pathname, search, hash } = window.location;
+
+  if (!options.replace && url === `${pathname}${search}${options.hash === undefined ? '' : hash}`) {
     return;
   }
 
@@ -149,18 +153,32 @@ export function updateQuery(patch: QueryPatch, options: NavigateOptions = {}): v
     }
   }
 
-  navigate(route.path, query, options);
+  // Меняются только query-параметры: путь и hash текущего адреса сохраняются.
+  navigate(route.path, query, { hash: window.location.hash, ...options });
 }
 
 // Закрытие диалога: если диалог открывали мы сами (pushState с меткой
 // dialog), возвращаемся назад по истории -- это ровно "URL страницы под
 // диалогом", и Forward снова откроет диалог. Если же диалог пришёл из
 // deep link (истории "до" нет), просто убираем его параметр из URL.
+// Если Back не сработал (у вкладки нет предыдущей записи истории --
+// например, после восстановления вкладки метка dialog осталась, а запись
+// под диалогом нет), через это время убираем параметр заменой URL.
+export const DIALOG_BACK_FALLBACK_MS = 300;
+
 export function closeDialog(param: string): void {
   const state = (window.history.state ?? {}) as HistoryMarker;
 
   if (state.dialog) {
+    const urlBeforeBack = window.location.href;
     window.history.back();
+
+    window.setTimeout(() => {
+      const stillOpen = new URLSearchParams(window.location.search).has(param);
+      if (window.location.href === urlBeforeBack && stillOpen) {
+        updateQuery({ [param]: undefined }, { replace: true, dialog: false });
+      }
+    }, DIALOG_BACK_FALLBACK_MS);
     return;
   }
 

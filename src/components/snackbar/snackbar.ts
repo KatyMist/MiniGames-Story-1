@@ -1,6 +1,6 @@
 import './snackbar.scss';
 
-export type SnackbarVariant = 'success' | 'error' | 'info';
+export type SnackbarVariant = 'success' | 'error' | 'warning' | 'info';
 
 interface SnackbarOptions {
   variant?: SnackbarVariant;
@@ -15,6 +15,7 @@ const MAX_VISIBLE = 3;
 const ICONS: Readonly<Record<SnackbarVariant, string>> = {
   success: 'check_circle',
   error: 'error',
+  warning: 'warning',
   info: 'info',
 };
 
@@ -58,7 +59,7 @@ export function showSnackbar(message: string, options: SnackbarOptions = {}): vo
   const snackbar = document.createElement('div');
   snackbar.className = `snackbar snackbar--${variant}`;
   snackbar.dataset.message = message;
-  snackbar.setAttribute('role', variant === 'error' ? 'alert' : 'status');
+  snackbar.setAttribute('role', variant === 'error' || variant === 'warning' ? 'alert' : 'status');
 
   const icon = document.createElement('span');
   icon.className = 'material-symbols-outlined snackbar__icon';

@@ -2,7 +2,9 @@ import './header.scss';
 import logoIconUrl from '../../assets/icons/logo.png';
 import { createMobileMenu } from '../mobile-menu/mobileMenu';
 import type { AuthMode } from '../auth-dialog/authDialog';
-import { CURRENT_USER } from '../../shared/authState';
+import { getSession } from '../../app/authStore';
+import type { AppSession } from '../../app/session';
+import { createUserBadge } from '../user-avatar/userAvatar';
 import { getRoute, toHref } from '../../app/router';
 import { NAV_LINKS, applyNavLinkTarget } from '../../shared/navLinks';
 
@@ -54,43 +56,33 @@ function createNavLinks(): HTMLUListElement {
   return list;
 }
 
-function createLogOutButton(): HTMLButtonElement {
+export interface HeaderOptions {
+  onAuthRequest: (mode: AuthMode) => void;
+  onLogout: () => void;
+}
+
+function createLogOutButton(onLogout: () => void): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'btn btn--outline';
   button.textContent = 'Log Out';
+  button.addEventListener('click', onLogout);
   return button;
-}
-
-function createUserBadge(): HTMLDivElement {
-  const user = document.createElement('div');
-  user.className = 'header__user';
-
-  const name = document.createElement('span');
-  name.className = 'header__user-name';
-  name.textContent = CURRENT_USER.name;
-
-  const avatar = document.createElement('span');
-  avatar.className = 'header__user-avatar';
-  avatar.textContent = CURRENT_USER.initials;
-  avatar.setAttribute('aria-hidden', 'true');
-
-  user.append(name, avatar);
-
-  return user;
 }
 
 // Полный блок действий -- только для laptop+ (см. header.scss), где виден
 // весь инлайн-навбар. Гость видит Log In + Sign Up, авторизованный -- имя
-// с аватаром и Log Out (по присланному референсу навбара). Log In/Sign Up
-// открывают диалог авторизации (openAuth), Log Out пока никак не обработан
-// -- при CURRENT_USER.isLoggedIn=false он и не рендерится (см. authState.ts).
-function createDesktopActions(openAuth: (mode: AuthMode) => void): HTMLDivElement {
+// с аватаром и Log Out (по референсу навбара). Состояние берётся из
+// активной сессии приложения; при её смене шапка пересоздаётся (main.ts).
+function createDesktopActions(
+  session: AppSession | undefined,
+  { onAuthRequest: openAuth, onLogout }: HeaderOptions,
+): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'header__actions';
 
-  if (CURRENT_USER.isLoggedIn) {
-    actions.append(createUserBadge(), createLogOutButton());
+  if (session) {
+    actions.append(createUserBadge(session, 'header__user'), createLogOutButton(onLogout));
     return actions;
   }
 
@@ -115,12 +107,15 @@ function createDesktopActions(openAuth: (mode: AuthMode) => void): HTMLDivElemen
 // кнопка -- по референсу навбара, Log In там вообще не показывается
 // (только Sign Up у гостя / Log Out у авторизованного), полный список
 // доступен через бургер-меню.
-function createTabletCta(openAuth: (mode: AuthMode) => void): HTMLDivElement {
+function createTabletCta(
+  session: AppSession | undefined,
+  { onAuthRequest: openAuth, onLogout }: HeaderOptions,
+): HTMLDivElement {
   const cta = document.createElement('div');
   cta.className = 'header__cta';
 
-  if (CURRENT_USER.isLoggedIn) {
-    cta.append(createLogOutButton());
+  if (session) {
+    cta.append(createLogOutButton(onLogout));
     return cta;
   }
 
@@ -135,22 +130,23 @@ function createTabletCta(openAuth: (mode: AuthMode) => void): HTMLDivElement {
   return cta;
 }
 
-function createNav(openAuth: (mode: AuthMode) => void): HTMLElement {
+function createNav(session: AppSession | undefined, options: HeaderOptions): HTMLElement {
   const nav = document.createElement('nav');
   nav.className = 'header__nav';
   nav.setAttribute('aria-label', 'Main navigation');
-  nav.append(createNavLinks(), createDesktopActions(openAuth));
+  nav.append(createNavLinks(), createDesktopActions(session, options));
 
   return nav;
 }
 
 function createMobileControls(
   burger: HTMLButtonElement,
-  openAuth: (mode: AuthMode) => void,
+  session: AppSession | undefined,
+  options: HeaderOptions,
 ): HTMLDivElement {
   const controls = document.createElement('div');
   controls.className = 'header__mobile-controls';
-  controls.append(createTabletCta(openAuth), burger);
+  controls.append(createTabletCta(session, options), burger);
 
   return controls;
 }
@@ -175,7 +171,8 @@ function createBurgerButton(): HTMLButtonElement {
 // шапки: его открытое состояние хранится в URL (?auth=login|register), и
 // шапка пересоздаётся при смене страницы -- диалог при этом не должен
 // пропадать. Шапка лишь просит открыть его через onAuthRequest.
-export function createHeader(onAuthRequest: (mode: AuthMode) => void): HTMLElement {
+export function createHeader(options: HeaderOptions): HTMLElement {
+  const session = getSession();
   const header = document.createElement('header');
   header.className = 'header';
 
@@ -194,14 +191,18 @@ export function createHeader(onAuthRequest: (mode: AuthMode) => void): HTMLEleme
       burger.setAttribute('aria-expanded', String(isOpen));
       burger.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
     },
-    onAuthRequest,
+    { session, ...options },
   );
 
   burger.addEventListener('click', () => {
     menu.toggle();
   });
 
-  inner.append(createLogo(), createNav(onAuthRequest), createMobileControls(burger, onAuthRequest));
+  inner.append(
+    createLogo(),
+    createNav(session, options),
+    createMobileControls(burger, session, options),
+  );
   header.append(inner, menu.element);
 
   return header;

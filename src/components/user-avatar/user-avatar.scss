@@ -1,0 +1,31 @@
+@use '../../styles/tokens';
+@use '../../styles/utils';
+
+.user-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: utils.space('4');
+  height: utils.space('4');
+  border-radius: utils.radius('pill');
+  background-color: utils.color('on-primary');
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: utils.color('white');
+}
+
+.user-avatar--photo {
+  background-color: utils.color('secondary');
+}
+
+.user-avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar__fallback {
+  font-size: var(--font-size-lg);
+}

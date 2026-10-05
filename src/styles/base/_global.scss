@@ -51,3 +51,24 @@ button {
   font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
+
+// Индикатор загрузки внутри кнопок (авторизация, избранное, комментарии,
+// лайки): иконка progress_activity, вращающаяся во время запроса.
+.spinner {
+  font-size: var(--font-size-lg);
+  animation: spinner-rotate var(--duration-spin) linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: var(--duration-spin-slow);
+  }
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
