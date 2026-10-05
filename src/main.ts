@@ -98,13 +98,7 @@ function mountApp(): void {
 
     header = createHeader(headerOptions);
 
-    root.replaceChildren(
-      header,
-      main,
-      createFooter(),
-      gameDetails.element,
-      authDialog.element,
-    );
+    root.replaceChildren(header, main, createFooter(), gameDetails.element, authDialog.element);
   }
 
   function syncDialogs(route: RouteState): void {
