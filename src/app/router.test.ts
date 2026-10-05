@@ -96,6 +96,21 @@ describe('navigation', () => {
     expect(back).toHaveBeenCalledTimes(1);
   });
 
+  it('removes the dialog parameter itself when going back is impossible', async () => {
+    vi.useFakeTimers();
+    window.history.replaceState({ dialog: true }, '', '/?auth=login');
+    const router = await loadRouter('/?auth=login');
+    window.history.replaceState({ dialog: true }, '', '/?auth=login');
+    vi.spyOn(window.history, 'back').mockImplementation(() => {});
+
+    router.closeDialog('auth');
+    expect(window.location.search).toBe('?auth=login');
+
+    await vi.advanceTimersByTimeAsync(router.DIALOG_BACK_FALLBACK_MS);
+    expect(window.location.search).toBe('');
+    expect(window.history.state).toEqual({});
+  });
+
   it('removes the dialog parameter when the dialog came from a deep link', async () => {
     const router = await loadRouter('/?game=palia');
 
