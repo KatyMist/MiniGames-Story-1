@@ -304,3 +304,21 @@ export async function postComment(slug: string, comment: NewComment): Promise<Ga
 
   return response.data;
 }
+
+export interface CommentLikeState {
+  isLikedByCurrentUser: boolean;
+  likesCount: number;
+}
+
+// POST /api/comments/{commentId}/like -- переключатель лайка комментария.
+export async function toggleCommentLike(
+  commentId: string,
+  userEmail: string,
+): Promise<CommentLikeState> {
+  const response = await request<{ data: CommentLikeState }>(
+    `/comments/${encodeURIComponent(commentId)}/like`,
+    { method: 'POST', body: { userEmail }, timeoutMs: MUTATION_TIMEOUT_MS },
+  );
+
+  return response.data;
+}
