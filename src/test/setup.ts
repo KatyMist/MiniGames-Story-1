@@ -19,6 +19,52 @@ if (typeof window.matchMedia !== 'function') {
   });
 }
 
+// В Node.js 25+ есть собственный глобальный localStorage (Web Storage),
+// который без флага --localstorage-file не работает и перекрывает
+// localStorage из jsdom. Тестам нужно обычное хранилище в памяти, поэтому
+// в таком окружении подставляем простую реализацию интерфейса Storage.
+class MemoryStorage implements Storage {
+  private items = new Map<string, string>();
+
+  get length(): number {
+    return this.items.size;
+  }
+
+  clear(): void {
+    this.items.clear();
+  }
+
+  getItem(key: string): string | null {
+    return this.items.get(key) ?? null;
+  }
+
+  key(index: number): string | null {
+    return [...this.items.keys()][index] ?? null;
+  }
+
+  removeItem(key: string): void {
+    this.items.delete(key);
+  }
+
+  setItem(key: string, value: string): void {
+    this.items.set(key, String(value));
+  }
+}
+
+function hasWorkingLocalStorage(): boolean {
+  try {
+    return typeof window.localStorage.clear === 'function';
+  } catch {
+    return false;
+  }
+}
+
+if (!hasWorkingLocalStorage()) {
+  const storage = new MemoryStorage();
+  Object.defineProperty(window, 'localStorage', { configurable: true, value: storage });
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
+}
+
 window.scrollTo = noop;
 Element.prototype.scrollIntoView = noop;
 
