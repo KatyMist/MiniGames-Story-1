@@ -18,6 +18,11 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         reporter: ['text', 'html'],
+        // Цель задания -- не меньше 80% покрытия операторов по всем
+        // включённым файлам; ниже порога test:coverage завершится ошибкой.
+        thresholds: {
+          statements: 80,
+        },
         // В отчёт попадают все исходники приложения, даже не импортированные
         // ни одним тестом.
         all: true,
