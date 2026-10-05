@@ -1,7 +1,7 @@
 import './auth-dialog.scss';
 import { showSnackbar } from '../snackbar/snackbar';
-import { loginWithEmail, registerAccount } from '../../app/authActions';
-import { getAuthErrorMessage } from '../../app/authErrors';
+import { loginWithEmail, loginWithGoogle, registerAccount } from '../../app/authActions';
+import { getAuthErrorMessage, isAuthCancelled } from '../../app/authErrors';
 import type { AppSession } from '../../app/session';
 import { getProfileName } from '../../shared/profile';
 import {
@@ -158,8 +158,7 @@ function createDivider(): HTMLDivElement {
   return divider;
 }
 
-// OAuth через Google пока не подключен (бэкенда для реальной авторизации
-// нет вообще -- см. src/shared/authState.ts) -- кнопка пока декоративная.
+// Вход через Google (Firebase GoogleAuthProvider, всплывающее окно).
 function createGoogleButton(label: string): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
@@ -320,6 +319,7 @@ interface AuthFormView {
 interface AuthFormHandlers {
   onSwitchMode: () => void;
   onSubmit: (values: AuthFormValues) => void;
+  onGoogle: (button: HTMLButtonElement) => void;
 }
 
 function showFieldError(field: AuthField, message: string): void {
@@ -354,6 +354,7 @@ function createAuthForm(mode: AuthMode, handlers: AuthFormHandlers): AuthFormVie
   const fields = mode === 'login' ? createLoginFields() : createRegisterFields();
   const submitButton = createSubmitButton(copy.submitLabel);
   const googleButton = createGoogleButton(copy.googleLabel);
+  googleButton.addEventListener('click', () => handlers.onGoogle(googleButton));
 
   const getValues = (): AuthFormValues => {
     const values: AuthFormValues = {};
@@ -523,6 +524,13 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
       // повторить попытку.
       finish();
       const message = getAuthErrorMessage(error);
+
+      // Закрытое пользователем окно Google -- отмена, а не ошибка.
+      if (isAuthCancelled(error)) {
+        showSnackbar(message, { variant: 'info' });
+        return;
+      }
+
       currentView.formError.textContent = message;
       showSnackbar(message, { variant: 'error' });
     }
@@ -560,6 +568,9 @@ export function createAuthDialog(options: AuthDialogOptions = {}): AuthDialogHan
     view = createAuthForm(mode, {
       onSwitchMode: () => selectMode(isLogin ? 'register' : 'login'),
       onSubmit: submitForm,
+      onGoogle: (button) => {
+        void authenticate(loginWithGoogle, button, 'Connecting to Google…');
+      },
     });
     content.append(view.form);
   };
