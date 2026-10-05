@@ -47,4 +47,12 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // В тестах null -- реальные значения внешних API (Firebase User,
+    // localStorage.getItem), которые нужно подставлять в моки.
+    files: ['src/**/*.test.ts'],
+    rules: {
+      'unicorn/no-null': 'off',
+    },
+  },
 );
