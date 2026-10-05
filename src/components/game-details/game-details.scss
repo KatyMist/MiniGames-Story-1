@@ -35,6 +35,12 @@
   }
 }
 
+// Поверх открыт диалог авторизации: Game Details скрыт, но не закрыт.
+.game-details--suspended {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .game-details__backdrop {
   position: absolute;
   inset: 0;

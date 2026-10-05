@@ -27,6 +27,8 @@ export interface GameDetailsHandle {
   element: HTMLElement;
   open: (slug: string) => void;
   close: () => void;
+  // Временно скрыть диалог (поверх открыт Auth), не теряя его состояния.
+  setSuspended: (suspended: boolean) => void;
 }
 
 const TITLE_ID = 'game-details-title';
@@ -250,6 +252,7 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   let controller: AbortController | undefined;
   let comments: CommentsSectionHandle | undefined;
   let hasFailed = false;
+  let isSuspended = false;
 
   // Обложка игры (media): heroImage из API; если такого файла нет --
   // обложка карточки этой игры; нет и её -- декоративная заглушка
@@ -357,9 +360,19 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
     }
   }
 
+  const setSuspended = (suspended: boolean): void => {
+    isSuspended = suspended && isOpen;
+    root.classList.toggle('game-details--suspended', isSuspended);
+    // Auth при закрытии снимает блокировку прокрутки страницы -- если
+    // Game Details снова виден, возвращаем её.
+    if (isOpen && !isSuspended) document.body.style.overflow = 'hidden';
+  };
+
   const close = (): void => {
     if (!isOpen) return;
     isOpen = false;
+    isSuspended = false;
+    root.classList.remove('game-details--suspended');
     currentSlug = '';
     abortRequests();
     root.classList.remove('game-details--open');
@@ -377,7 +390,9 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
   };
 
   function dismiss(): void {
-    if (!isOpen) return;
+    // Скрытый под Auth диалог не реагирует на Escape/бэкдроп -- их
+    // обрабатывает Auth.
+    if (!isOpen || isSuspended) return;
 
     if (options.onDismiss) {
       options.onDismiss();
@@ -393,5 +408,5 @@ export function createGameDetails(options: GameDetailsOptions = {}): GameDetails
     if (event.key === 'Escape') dismiss();
   });
 
-  return { element: root, open, close };
+  return { element: root, open, close, setSuspended };
 }
