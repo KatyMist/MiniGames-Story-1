@@ -63,7 +63,7 @@ A single-page application in plain TypeScript, no frameworks: a home page with a
 <details>
 <summary><b>Мобильная версия · Mobile Version</b></summary>
 <br>
-![Uploading image.png…]()
+<img width="2760" height="1580" alt="image" src="https://github.com/user-attachments/assets/514f5a3a-96fa-4ab7-9815-0896a61e596e" />
 </details>
 
 ## Возможности · Features
